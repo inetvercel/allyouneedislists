@@ -1,0 +1,112 @@
+import { defineField, defineType } from 'sanity'
+
+export const post = defineType({
+  name: 'post',
+  title: 'Post',
+  type: 'document',
+  fields: [
+    defineField({
+      name: 'title',
+      title: 'Title',
+      type: 'string',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'slug',
+      title: 'Slug',
+      type: 'slug',
+      options: { source: 'title' },
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'fullPath',
+      title: 'Full URL Path',
+      description: 'Exact WordPress URL path e.g. /lifestyle/travel-leisure/top-5-hotels/',
+      type: 'string',
+    }),
+    defineField({
+      name: 'date',
+      title: 'Published Date',
+      type: 'datetime',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'featuredImage',
+      title: 'Featured Image',
+      type: 'image',
+      options: { hotspot: true },
+      fields: [
+        defineField({ name: 'alt', title: 'Alt Text', type: 'string' }),
+        defineField({ name: 'caption', title: 'Caption', type: 'string' }),
+      ],
+    }),
+    defineField({
+      name: 'excerpt',
+      title: 'Excerpt',
+      type: 'text',
+      rows: 3,
+    }),
+    defineField({
+      name: 'content',
+      title: 'Content (HTML)',
+      type: 'text',
+      rows: 20,
+    }),
+    defineField({
+      name: 'categories',
+      title: 'Categories',
+      type: 'array',
+      of: [{ type: 'reference', to: [{ type: 'category' }] }],
+    }),
+    defineField({
+      name: 'tags',
+      title: 'Tags',
+      type: 'array',
+      of: [{ type: 'reference', to: [{ type: 'tag' }] }],
+    }),
+    defineField({
+      name: 'seoTitle',
+      title: 'SEO Title',
+      type: 'string',
+    }),
+    defineField({
+      name: 'seoDescription',
+      title: 'SEO Description',
+      type: 'text',
+      rows: 3,
+    }),
+    defineField({
+      name: 'wpId',
+      title: 'WordPress ID',
+      type: 'number',
+      readOnly: true,
+    }),
+    defineField({
+      name: 'wpFeaturedMediaId',
+      title: 'WordPress Featured Media ID',
+      type: 'number',
+      readOnly: true,
+    }),
+  ],
+  preview: {
+    select: {
+      title: 'title',
+      subtitle: 'date',
+      media: 'featuredImage',
+    },
+    prepare({ title, subtitle, media }) {
+      return {
+        title,
+        subtitle: subtitle ? new Date(subtitle).toLocaleDateString() : '',
+        media,
+      }
+    },
+  },
+  orderings: [
+    {
+      title: 'Published Date (Newest)',
+      name: 'dateDesc',
+      by: [{ field: 'date', direction: 'desc' }],
+    },
+  ],
+})
