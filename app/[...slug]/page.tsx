@@ -261,12 +261,13 @@ export default async function SlugPage({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Tags:</span>
               {post.tags.map((tag) => (
-                <span
+                <Link
                   key={tag._id}
-                  className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full"
+                  href={`/tag/${tag.slug}`}
+                  className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full hover:bg-brand-red hover:text-white transition-colors"
                 >
                   {tag.name}
-                </span>
+                </Link>
               ))}
             </div>
           </div>
