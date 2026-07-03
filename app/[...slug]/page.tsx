@@ -64,6 +64,24 @@ function formatDate(dateStr: string) {
   })
 }
 
+function formatMonthYear(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+
+function calcReadingTime(html: string): number {
+  const text = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+  const words = text.split(' ').filter(Boolean).length
+  return Math.max(1, Math.ceil(words / 200))
+}
+
+function getFreshnessDate(date: string, updatedAt?: string): string | null {
+  if (!updatedAt) return null
+  const published = new Date(date).getTime()
+  const updated = new Date(updatedAt).getTime()
+  if ((updated - published) < 1000 * 60 * 60 * 24 * 14) return null
+  return updatedAt
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -91,6 +109,7 @@ export async function generateMetadata({
         images: [{ url: ogImage, width: 1200, height: 630 }],
         type: 'article',
         publishedTime: post.date,
+        modifiedTime: post.updatedAt || post.date,
       },
       twitter: {
         card: 'summary_large_image',
@@ -137,6 +156,8 @@ export default async function SlugPage({
     const imageUrl = post.featuredImage?.asset
       ? urlFor(post.featuredImage).width(1200).height(630).fit('crop').url()
       : null
+    const readingTime = calcReadingTime(post.content || '')
+    const freshnessDate = getFreshnessDate(post.date, post.updatedAt)
 
     const breadcrumbs = [
       { label: 'Home', href: '/' },
@@ -156,7 +177,7 @@ export default async function SlugPage({
           '@type': 'Article',
           headline: post.title,
           datePublished: post.date,
-          dateModified: post.date,
+          dateModified: post.updatedAt || post.date,
           description: post.seoDescription || post.excerpt?.replace(/<[^>]*>/g, '').slice(0, 200),
           url: `https://allyouneedislists.com${fullPath}`,
           ...(imageUrl && { image: { '@type': 'ImageObject', url: imageUrl } }),
@@ -223,16 +244,28 @@ export default async function SlugPage({
         </h1>
 
         {/* Meta */}
-        <div className="flex items-center gap-4 text-sm text-gray-400 mb-8 pb-8 border-b border-gray-100">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-8 pb-8 border-b border-gray-100">
           <div className="flex items-center gap-1.5">
             <Calendar size={14} />
             <time dateTime={post.date}>{formatDate(post.date)}</time>
           </div>
-          {post.tags && post.tags.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <Tag size={14} />
-              <span>{post.tags.slice(0, 3).map((t) => t.name).join(', ')}</span>
-            </div>
+          <span className="text-gray-200">·</span>
+          <span>{readingTime} min read</span>
+          {freshnessDate && (
+            <>
+              <span className="text-gray-200">·</span>
+              <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                Updated {formatMonthYear(freshnessDate)}
+              </span>
+            </>
+          )}
+          {post.aiGenerated && (
+            <>
+              <span className="text-gray-200">·</span>
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                AI-assisted
+              </span>
+            </>
           )}
         </div>
 

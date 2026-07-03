@@ -76,6 +76,19 @@ export const post = defineType({
       rows: 3,
     }),
     defineField({
+      name: 'updatedAt',
+      title: 'Last Updated',
+      description: 'Set this when you refresh/update the post content. Shown as a freshness badge and used for SEO dateModified.',
+      type: 'datetime',
+    }),
+    defineField({
+      name: 'aiGenerated',
+      title: 'AI Generated',
+      type: 'boolean',
+      initialValue: false,
+      description: 'Mark if this post was generated via the AI pipeline.',
+    }),
+    defineField({
       name: 'wpId',
       title: 'WordPress ID',
       type: 'number',

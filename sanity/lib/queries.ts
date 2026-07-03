@@ -56,7 +56,9 @@ export const getPostByPathQuery = groq`
       _id,
       name,
       "slug": slug.current
-    }
+    },
+    updatedAt,
+    aiGenerated
   }
 `
 

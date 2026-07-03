@@ -1,0 +1,41 @@
+# AI Post Generator — Topic Queue
+# One topic per line. Lines starting with # are ignored.
+# Run: node scripts/generate-post.mjs --batch scripts/topics.txt
+# Run as drafts: node scripts/generate-post.mjs --batch scripts/topics.txt --draft
+
+# ─── AI ──────────────────────────────────────────────────────────────────────
+Top 10 Best AI Writing Tools for Content Creators in 2025
+10 Ways ChatGPT Can Save You 5 Hours Every Week
+Best Free AI Image Generators You Can Use Right Now
+Top 5 AI Coding Assistants That Will Replace Your IDE Plugins
+10 AI Tools That Are Actually Worth Paying For
+
+# ─── Technology ──────────────────────────────────────────────────────────────
+Best Budget Laptops for Students Under $500
+10 Browser Extensions Every Developer Should Have
+Top 5 Password Managers Compared: Which One Should You Use?
+Best Smart Home Devices to Buy in 2025
+
+# ─── Business ─────────────────────────────────────────────────────────────────
+10 Free Marketing Tools That Replace Expensive Software
+Best Email Marketing Platforms for Small Businesses
+Top 5 Project Management Tools for Remote Teams
+10 Side Hustles You Can Start With No Money
+
+# ─── Entertainment ────────────────────────────────────────────────────────────
+Best TV Shows to Binge Watch This Month
+Top 10 Must-Watch Sci-Fi Movies of the Last Decade
+10 Video Games That Defined a Generation
+Best Podcasts for People Who Love True Crime
+
+# ─── Travel ───────────────────────────────────────────────────────────────────
+10 Underrated European Cities Worth Visiting
+Best Travel Credit Cards for Frequent Flyers
+Top 5 Countries with the Best Food Culture
+10 Things to Do in Tokyo on a Budget
+
+# ─── Lifestyle ────────────────────────────────────────────────────────────────
+10 Habits of Highly Productive People
+Best Apps for Tracking Your Fitness Goals
+Top 5 Morning Routines Backed by Science
+10 Books That Will Change How You Think About Money

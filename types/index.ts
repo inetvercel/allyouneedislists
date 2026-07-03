@@ -41,6 +41,8 @@ export interface PostFull extends PostCard {
   seoTitle?: string
   seoDescription?: string
   tags?: TagRef[]
+  updatedAt?: string
+  aiGenerated?: boolean
 }
 
 export interface Category {
