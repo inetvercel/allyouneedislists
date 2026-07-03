@@ -139,3 +139,45 @@ export const getRssFeedPostsQuery = groq`
     "category": categories[0]-> { name }
   }
 `
+
+export const getTagBySlugQuery = groq`
+  *[_type == "tag" && slug.current == $slug][0] {
+    _id,
+    name,
+    "slug": slug.current,
+    "count": count(*[_type == "post" && references(^._id)])
+  }
+`
+
+export const getPostsByTagQuery = groq`
+  *[_type == "post" && references(*[_type == "tag" && slug.current == $slug]._id)] | order(date desc) [$start...$end] {
+    ${POST_CARD_FIELDS}
+  }
+`
+
+export const getPostsByTagCountQuery = groq`
+  count(*[_type == "post" && references(*[_type == "tag" && slug.current == $slug]._id)])
+`
+
+export const getAllTagSlugPathsQuery = groq`
+  *[_type == "tag" && defined(slug) && count(*[_type == "post" && references(^._id)]) > 0][0...500] {
+    "slug": slug.current
+  }
+`
+
+export const searchPostsQuery = groq`
+  *[_type == "post" && (title match $q || excerpt match $q)] | order(date desc) [0...24] {
+    ${POST_CARD_FIELDS}
+  }
+`
+
+export const getHomepageSectionsQuery = groq`
+  {
+    "ai": *[_type == "post" && references(*[_type == "category" && slug.current in ["ai","ai-tools","ai-models","chatgpt","productivity"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "technology": *[_type == "post" && references(*[_type == "category" && slug.current in ["technology","software","hardware","programming","internet"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "business": *[_type == "post" && references(*[_type == "category" && slug.current in ["business","marketing","seo","finance","startups"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "entertainment": *[_type == "post" && references(*[_type == "category" && slug.current in ["entertainment","movies","tv","gaming","music"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "lifestyle": *[_type == "post" && references(*[_type == "category" && slug.current == "lifestyle"]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "travel": *[_type == "post" && references(*[_type == "category" && slug.current == "travel"]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} }
+  }
+`

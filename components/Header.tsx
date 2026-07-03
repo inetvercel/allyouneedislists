@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, Menu, X } from 'lucide-react'
+import { ChevronDown, Menu, X, Search } from 'lucide-react'
 
 type NavChild = { label: string; href: string }
 type NavItem = { label: string; href: string; children?: NavChild[] }
@@ -166,6 +166,15 @@ export default function Header() {
             })}
           </nav>
 
+          {/* Desktop search icon */}
+          <Link
+            href="/search"
+            className="hidden lg:flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all ml-auto flex-shrink-0"
+            aria-label="Search"
+          >
+            <Search size={17} />
+          </Link>
+
           {/* Mobile hamburger */}
           <button
             className="lg:hidden ml-auto flex items-center justify-center w-9 h-9 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all"
@@ -192,6 +201,14 @@ export default function Header() {
         }`}
       >
         <div className="bg-[#0a0a0a] px-4 py-3 overflow-y-auto max-h-[85vh]">
+          <Link
+            href="/search"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-white/[0.04] border border-white/[0.06] text-gray-400 hover:text-white transition-colors"
+          >
+            <Search size={15} />
+            <span className="text-sm font-medium">Search 1,400+ lists…</span>
+          </Link>
           <div className="space-y-0.5">
             {NAV.map((item) => (
               <div key={item.label}>

@@ -75,17 +75,28 @@ export async function generateMetadata({
 
   const post = await client.fetch<PostFull | null>(getPostByPathQuery, { path: fullPath }).catch(() => null)
   if (post) {
+    const title = post.seoTitle || post.title
+    const description = post.seoDescription || post.excerpt?.replace(/<[^>]*>/g, '').slice(0, 160)
+    const category = post.categories?.[0]?.name || ''
+    const ogImage = post.featuredImage?.asset
+      ? urlFor(post.featuredImage).width(1200).height(630).url()
+      : `/og?title=${encodeURIComponent(title)}&category=${encodeURIComponent(category)}`
+
     return {
-      title: post.seoTitle || post.title,
-      description: post.seoDescription || post.excerpt?.replace(/<[^>]*>/g, '').slice(0, 160),
+      title,
+      description,
       openGraph: {
-        title: post.seoTitle || post.title,
-        description: post.seoDescription || post.excerpt?.replace(/<[^>]*>/g, '').slice(0, 160),
-        images: post.featuredImage?.asset
-          ? [urlFor(post.featuredImage).width(1200).height(630).url()]
-          : [],
+        title,
+        description,
+        images: [{ url: ogImage, width: 1200, height: 630 }],
         type: 'article',
         publishedTime: post.date,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [ogImage],
       },
     }
   }
