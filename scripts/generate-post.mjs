@@ -19,6 +19,7 @@
  *   SANITY_WRITE_TOKEN
  */
 
+import OpenAI from 'openai'
 import { createClient } from '@sanity/client'
 import { readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
@@ -26,9 +27,9 @@ import { resolve } from 'path'
 // ─── Load .env.local ──────────────────────────────────────────────────────────
 const envPath = resolve(process.cwd(), '.env.local')
 if (existsSync(envPath)) {
-  const envContent = readFileSync(envPath, 'utf-8')
+  const envContent = readFileSync(envPath, 'utf-8').replace(/^\uFEFF/, '')
   for (const line of envContent.split('\n')) {
-    const match = line.match(/^([^#=\s][^=]*)=(.*)$/)
+    const match = line.match(/^([^#=]+)=(.*)$/)
     if (match) {
       const key = match[1].trim()
       const value = match[2].trim().replace(/^["']|["']$/g, '')
@@ -74,6 +75,8 @@ if (!PROJECT_ID) { console.error('❌ NEXT_PUBLIC_SANITY_PROJECT_ID not set'); p
 if (!TOKEN) { console.error('❌ SANITY_WRITE_TOKEN not set'); process.exit(1) }
 
 // ─── Clients ──────────────────────────────────────────────────────────────────
+const openaiClient = new OpenAI({ apiKey: OPENAI_KEY })
+
 const sanity = createClient({
   projectId: PROJECT_ID,
   dataset: DATASET,
@@ -95,50 +98,49 @@ const CATEGORY_MAP = {
 
 // ─── OpenAI helpers ───────────────────────────────────────────────────────────
 async function callOpenAI(messages, jsonMode = false) {
-  const body = {
+  const response = await openaiClient.chat.completions.create({
     model: 'gpt-4o',
     messages,
     temperature: 0.75,
     ...(jsonMode && { response_format: { type: 'json_object' } }),
-  }
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_KEY}`,
-    },
-    body: JSON.stringify(body),
   })
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`OpenAI API error ${res.status}: ${err}`)
-  }
-  const data = await res.json()
-  return data.choices[0].message.content
+  return response.choices[0].message.content
 }
 
 async function generateImage(prompt) {
-  const body = {
-    model: 'dall-e-3',
-    prompt: `${prompt} Editorial photography style, 16:9 composition, cinematic lighting, high quality, no text, no watermarks, no logos.`,
-    size: '1792x1024',
-    quality: useHD ? 'hd' : 'standard',
-    n: 1,
+  const fullPrompt = `${prompt} Editorial photography style, 16:9 composition, cinematic lighting, high quality, no text, no watermarks, no logos.`
+
+  // Try dall-e-3 first, fall back to gpt-image-1 for newer project API keys
+  let imageUrl
+  try {
+    const response = await openaiClient.images.generate({
+      model: 'dall-e-3',
+      prompt: fullPrompt,
+      size: '1792x1024',
+      quality: useHD ? 'hd' : 'standard',
+      n: 1,
+    })
+    imageUrl = response.data[0].url
+  } catch (err) {
+    if (err.message?.includes('does not exist') || err.status === 400) {
+      console.log('  ↩️  dall-e-3 unavailable, trying gpt-image-1...')
+      const response = await openaiClient.images.generate({
+        model: 'gpt-image-1',
+        prompt: fullPrompt,
+        size: '1024x1024',
+        quality: useHD ? 'high' : 'medium',
+        n: 1,
+      })
+      // gpt-image-1 returns base64, not a URL
+      if (response.data[0].b64_json) {
+        return { b64: response.data[0].b64_json }
+      }
+      imageUrl = response.data[0].url
+    } else {
+      throw err
+    }
   }
-  const res = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_KEY}`,
-    },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`DALL-E API error ${res.status}: ${err}`)
-  }
-  const data = await res.json()
-  return data.data[0].url
+  return { url: imageUrl }
 }
 
 // ─── Content generation ────────────────────────────────────────────────────────
@@ -178,13 +180,18 @@ Return ONLY valid JSON with exactly these fields (no markdown, no code fences):
 }
 
 // ─── Sanity helpers ────────────────────────────────────────────────────────────
-async function uploadImageToSanity(imageUrl, filename) {
+async function uploadImageToSanity(imageResult, filename) {
   console.log(`  ☁️  Uploading image to Sanity CDN...`)
-  const res = await fetch(imageUrl)
-  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`)
-  const buffer = await res.arrayBuffer()
+  let buffer
+  if (imageResult.b64) {
+    buffer = Buffer.from(imageResult.b64, 'base64')
+  } else {
+    const res = await fetch(imageResult.url)
+    if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`)
+    buffer = Buffer.from(await res.arrayBuffer())
+  }
 
-  const asset = await sanity.assets.upload('image', Buffer.from(buffer), {
+  const asset = await sanity.assets.upload('image', buffer, {
     filename,
     contentType: 'image/png',
   })
@@ -267,8 +274,8 @@ async function processOneTopic(topic, category) {
   if (!skipImages) {
     try {
       console.log(`  🎨 DALL-E 3 generating image (${useHD ? 'HD $0.12' : 'standard $0.04'})...`)
-      const imageUrl = await generateImage(content.imagePrompt)
-      featuredImage = await uploadImageToSanity(imageUrl, `${content.slug}-hero.png`)
+      const imageResult = await generateImage(content.imagePrompt)
+      featuredImage = await uploadImageToSanity(imageResult, `${content.slug}-hero.png`)
       console.log(`  ✅ Image ready`)
     } catch (err) {
       console.warn(`  ⚠️  Image failed: ${err.message} — continuing without image`)
