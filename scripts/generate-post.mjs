@@ -96,6 +96,20 @@ const sanity = createClient({
   useCdn: false,
 })
 
+// ─── Slug cleaner ─────────────────────────────────────────────────────────────
+const STOP_WORDS = new Set(['the','a','an','and','or','in','on','at','to','for','of','by','with','from','is','are','was','were','how','what','why','when','where','who','will','can','you','your','we','our','its','i','do','be'])
+
+function cleanSlug(raw) {
+  return raw
+    .toLowerCase()
+    .replace(/\b20\d{2}\b/g, '')       // remove years e.g. 2024 2025 2026
+    .replace(/[^a-z0-9\s-]/g, '')      // only letters, numbers, hyphens, spaces
+    .split(/[\s-]+/)                   // split on hyphens and spaces
+    .filter(w => w && !STOP_WORDS.has(w))  // remove stop words and empty strings
+    .slice(0, 6)                       // max 6 segments
+    .join('-')
+}
+
 const CATEGORY_MAP = {
   ai: ['ai', 'ai-tools', 'ai-models', 'chatgpt', 'productivity'],
   business: ['business', 'marketing', 'seo', 'finance', 'startups'],
@@ -110,9 +124,8 @@ const CATEGORY_MAP = {
 // ─── OpenAI helpers ───────────────────────────────────────────────────────────
 async function callOpenAI(messages, jsonMode = false) {
   const response = await openaiClient.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-5.5',
     messages,
-    temperature: 0.75,
     ...(jsonMode && { response_format: { type: 'json_object' } }),
   })
   return response.choices[0].message.content
@@ -173,24 +186,15 @@ async function searchUnsplash(keywords) {
   return { url: best.urls.regular, unsplashCredit: `${best.user.name} on Unsplash` }
 }
 
-// ─── OpenAI image generation (fallback) ───────────────────────────────────────
+// ─── OpenAI image generation ──────────────────────────────────────────────────
 async function generateImageAI(visualPrompt) {
   const fullPrompt = `${visualPrompt} Editorial photography style, 16:9 composition, cinematic lighting, high quality, no text, no watermarks, no logos.`
 
-  try {
-    const response = await openaiClient.images.generate({
-      model: 'dall-e-3',
-      prompt: fullPrompt,
-      size: '1792x1024',
-      quality: useHD ? 'hd' : 'standard',
-      n: 1,
-    })
-    return { url: response.data[0].url }
-  } catch (err) {
-    if (err.message?.includes('does not exist') || err.status === 400) {
-      console.log('  ↩️  dall-e-3 unavailable, using gpt-image-1...')
+  // Try gpt-image-2 first (state-of-the-art), fall back to gpt-image-1
+  for (const model of ['gpt-image-2', 'gpt-image-1']) {
+    try {
       const response = await openaiClient.images.generate({
-        model: 'gpt-image-1',
+        model,
         prompt: fullPrompt,
         size: '1024x1024',
         quality: useHD ? 'high' : 'medium',
@@ -198,8 +202,13 @@ async function generateImageAI(visualPrompt) {
       })
       if (response.data[0].b64_json) return { b64: response.data[0].b64_json }
       return { url: response.data[0].url }
+    } catch (err) {
+      if (model === 'gpt-image-2' && (err.message?.includes('does not exist') || err.status === 400 || err.status === 404)) {
+        console.log(`  ↩️  gpt-image-2 unavailable, trying gpt-image-1...`)
+        continue
+      }
+      throw err
     }
-    throw err
   }
 }
 
@@ -239,7 +248,7 @@ async function getImage(title, imagePrompt, tags) {
 
 // ─── Content generation ────────────────────────────────────────────────────────
 async function generateContent(topic, category) {
-  console.log(`  📝 GPT-4o generating content...`)
+  console.log(`  📝 GPT-5.5 generating content...`)
 
   const system = `You are a senior editor at "All You Need Is Lists", a top-ranked web publication specialising in expert listicle content. Your articles are:
 - Well-researched with specific, accurate details and real examples
@@ -254,8 +263,8 @@ ${category ? `Suggested category: ${category}` : ''}
 
 Return ONLY valid JSON with exactly these fields (no markdown, no code fences):
 {
-  "title": "Engaging, SEO-optimised title under 65 characters. Include the year if relevant.",
-  "slug": "lowercase-hyphenated-url-slug-no-special-chars",
+  "title": "Engaging, punchy title under 65 characters. Do NOT include the year in the title.",
+  "slug": "3-5 word slug, NO year, NO stop words (the/a/an/for/in/of/to/by), e.g. best-budget-laptops-students",
   "excerpt": "Compelling 150-160 character meta description that makes people want to click",
   "seoTitle": "SEO page title under 60 characters including target keyword",
   "seoDescription": "Meta description 145-155 characters with natural keyword usage",
@@ -270,7 +279,10 @@ Return ONLY valid JSON with exactly these fields (no markdown, no code fences):
     { role: 'user', content: user },
   ], true)
 
-  return JSON.parse(raw)
+  const parsed = JSON.parse(raw)
+  // Post-process: enforce clean slug regardless of what GPT returned
+  parsed.slug = cleanSlug(parsed.slug || parsed.title)
+  return parsed
 }
 
 // ─── Sanity helpers ────────────────────────────────────────────────────────────
