@@ -250,28 +250,55 @@ async function getImage(title, imagePrompt, tags) {
 async function generateContent(topic, category) {
   console.log(`  📝 GPT-5.5 generating content...`)
 
-  const system = `You are a senior editor at "All You Need Is Lists", a top-ranked web publication specialising in expert listicle content. Your articles are:
-- Well-researched with specific, accurate details and real examples
-- Written in an engaging, direct second-person voice
-- Structured for featured snippets (clear numbered items with H2 headings)  
-- SEO-optimised with natural keyword integration
-- 1,800–2,500 words, informative but scannable
-- Formatted in clean HTML (no external CSS, no wrapper divs)`
+  const system = `You are a senior editor at "All You Need Is Lists", a top-ranked listicle publication. Every article you write:
+- Is 3,000–3,500 words of genuinely useful, expert-level content
+- Contains specific real-world details, prices, stats, and named examples — never vague generalisations
+- Uses a direct, confident second-person voice ("you", "your")
+- Is structured for Google featured snippets and rich results
+- Follows a strict HTML structure (described below) — no deviation`
+
+  const contentStructure = `Structure the "content" field HTML EXACTLY like this — no exceptions:
+
+1. QUICK PICKS BOX (very first element):
+<div class="quick-picks"><strong>⚡ Quick Picks</strong><ul>
+<li>🥇 <strong>Best Overall:</strong> [Item name] — [one-line reason]</li>
+<li>💰 <strong>Best Value:</strong> [Item name] — [one-line reason]</li>
+[one <li> per remaining item in the list]
+</ul></div>
+
+2. INTRO — 2-3 engaging sentences explaining why this topic matters right now.
+
+3. LIST ITEMS — 10 to 12 items. For each item:
+<h2>N. [Item Name]</h2>
+<p class="best-for"><strong>Best for:</strong> [one sentence describing the ideal reader or use case]</p>
+<p>[Paragraph 1 — what it is, why it stands out, specific differentiator]</p>
+<p>[Paragraph 2 — features, real specs/prices/data, named examples]</p>
+<p>[Paragraph 3 — practical tips, caveats, comparison context, or who should avoid it]</p>
+
+4. CONCLUSION — 2-3 sentence wrap-up.
+
+5. FAQ SECTION (last element):
+<div class="faq-section"><h2>Frequently Asked Questions</h2>
+<div class="faq-item"><h3>[Question?]</h3><p>[Concise, helpful answer in 2-3 sentences]</p></div>
+[6 to 8 faq-item divs covering the most common reader questions]
+</div>`
 
   const user = `Write a complete, publication-ready listicle about: "${topic}"
 ${category ? `Suggested category: ${category}` : ''}
 
-Return ONLY valid JSON with exactly these fields (no markdown, no code fences):
+${contentStructure}
+
+Return ONLY valid JSON — no markdown, no code fences:
 {
-  "title": "Engaging, punchy title under 65 characters. Do NOT include the year in the title.",
-  "slug": "3-5 word slug, NO year, NO stop words (the/a/an/for/in/of/to/by), e.g. best-budget-laptops-students",
-  "excerpt": "Compelling 150-160 character meta description that makes people want to click",
-  "seoTitle": "SEO page title under 60 characters including target keyword",
-  "seoDescription": "Meta description 145-155 characters with natural keyword usage",
-  "content": "Full HTML article. Start with a compelling 2-sentence intro paragraph. Then use numbered <h2> headings for each list item (e.g. '<h2>1. Item Name</h2>'). Under each heading write 2-3 <p> paragraphs with specific details. Use <strong> for key terms. End with a short conclusion paragraph. No wrapper divs.",
-  "imagePrompt": "Specific, vivid DALL-E 3 prompt describing a photorealistic hero image that captures the essence of this topic. Be specific about subject, setting, lighting, mood. No text in image.",
-  "suggestedCategory": "One of exactly: ai, business, technology, entertainment, travel, lifestyle, statistics, directories",
-  "tags": ["5 to 8 specific lowercase tags relevant to this topic, no spaces"]
+  "title": "Punchy, benefit-driven title under 65 characters. No year.",
+  "slug": "3-5 word slug — no year, no stop words (the/a/an/for/in/of/to/by). Example: best-budget-laptops-students",
+  "excerpt": "Compelling 150-160 character summary that creates urgency to click",
+  "seoTitle": "SEO title under 60 characters with primary keyword near the start",
+  "seoDescription": "145-155 character meta description with natural keyword use and a call to action",
+  "content": "[Full HTML following the structure above — 3,000-3,500 words]",
+  "imagePrompt": "Detailed photorealistic image prompt: specific subject, environment, lighting, mood, camera angle. No text or logos.",
+  "suggestedCategory": "One of: ai, business, technology, entertainment, travel, lifestyle, statistics, directories",
+  "tags": ["6 to 8 specific lowercase hyphenated tags"]
 }`
 
   const raw = await callOpenAI([
@@ -280,9 +307,24 @@ Return ONLY valid JSON with exactly these fields (no markdown, no code fences):
   ], true)
 
   const parsed = JSON.parse(raw)
-  // Post-process: enforce clean slug regardless of what GPT returned
   parsed.slug = cleanSlug(parsed.slug || parsed.title)
   return parsed
+}
+
+// ─── Internal linking ──────────────────────────────────────────────────────────
+async function findRelatedPosts(slug, categoryRefs) {
+  if (!categoryRefs.length) return []
+  const catIds = categoryRefs.map(r => r._ref)
+  return sanity.fetch(
+    `*[_type == "post" && !(_id in path("drafts.**")) && slug.current != $slug && count(categories[@._ref in $catIds]) > 0] | order(date desc) [0...5] { title, fullPath }`,
+    { slug, catIds }
+  ).catch(() => [])
+}
+
+function buildRelatedHTML(posts) {
+  if (!posts.length) return ''
+  const items = posts.map(p => `<li><a href="${p.fullPath}">${p.title}</a></li>`).join('\n    ')
+  return `\n<div class="related-lists"><h2>Related Lists You'll Love</h2><ul>\n    ${items}\n  </ul></div>\n`
 }
 
 // ─── Sanity helpers ────────────────────────────────────────────────────────────
@@ -396,7 +438,14 @@ async function processOneTopic(topic, category) {
   ])
   console.log(`  ✅ ${categoryRefs.length} category ref(s), ${tagRefs.length} tag ref(s)`)
 
-  // 4. Publish to Sanity
+  // 4. Internal links — inject related posts section
+  const relatedPosts = await findRelatedPosts(content.slug, categoryRefs)
+  if (relatedPosts.length > 0) {
+    content.content += buildRelatedHTML(relatedPosts)
+    console.log(`  🔗 ${relatedPosts.length} internal link(s) injected`)
+  }
+
+  // 5. Publish to Sanity
   const post = await createSanityPost({ content, featuredImage, categoryRefs, tagRefs, draft: isDraft })
   console.log(`  ✅ Post ${isDraft ? 'draft' : 'published'}: ${post._id}`)
   console.log(`     Studio: https://allyouneedislists.com/studio`)
