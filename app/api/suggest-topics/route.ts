@@ -18,8 +18,9 @@ export async function GET(request: Request) {
     useCdn: true,
   })
 
-  const existing = await sanityClient.fetch(`*[_type == "post"][0...1000] { title }`)
-  const existingTitles = existing.map((p: { title: string }) => p.title).filter(Boolean)
+  // Fetch a sample of existing titles — enough for deduplication without slowing things down
+  const existing = await sanityClient.fetch(`*[_type == "post"] | order(date desc) [0...200] { title }`)
+  const existingTitles: string[] = existing.map((p: { title: string }) => p.title).filter(Boolean)
 
   const catLine = category
     ? `Focus ONLY on the "${category}" category.`
@@ -31,24 +32,20 @@ export async function GET(request: Request) {
     messages: [
       {
         role: 'system',
-        content: `You are a content strategist for "All You Need Is Lists", a high-traffic listicle website. 
-You identify high-search-volume topic gaps — topics people actively search for that the site doesn't cover yet.`,
+        content: `You are a content strategist for "All You Need Is Lists", a high-traffic listicle website. You identify high-search-volume topic gaps — topics people search for that the site doesn't cover.`,
       },
       {
         role: 'user',
-        content: `Suggest exactly ${count} fresh listicle topic ideas. ${catLine}
+        content: `Suggest exactly ${count} listicle topic ideas for 2026. ${catLine}
 
-Requirements:
-- High search volume or strongly trending in 2026
-- Formats: "Best X", "Top N X", "X for Y", "X vs Y", "How to X"
-- Specific and actionable — not vague or generic
-- NOT similar to any existing title below
+- High search volume, evergreen or trending
+- Formats: "Best X", "Top N X", "X for Y", "X vs Y"
+- Not similar to existing titles below
 
-EXISTING TITLES — do not duplicate or closely paraphrase:
-${existingTitles.slice(0, 400).join('\n')}
+EXISTING (avoid):
+${existingTitles.slice(0, 100).join('\n')}
 
-Return ONLY valid JSON:
-{"topics":[{"title":"...","category":"ai|technology|business|entertainment|travel|lifestyle","searchIntent":"informational|commercial|navigational"}]}`,
+JSON only: {"topics":[{"title":"...","category":"ai|technology|business|entertainment|travel|lifestyle","searchIntent":"informational|commercial"}]}`,
       },
     ],
   })

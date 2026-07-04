@@ -47,6 +47,7 @@ export function AIStudioTool() {
   const [topics, setTopics] = useState<TopicRow[]>([])
   const [loading, setLoading] = useState(false)
   const [runningId, setRunningId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const updateTopic = useCallback((id: string, patch: Partial<TopicRow>) => {
     setTopics((prev: TopicRow[]) => prev.map((t: TopicRow) => t.id === id ? { ...t, ...patch } : t))
@@ -55,11 +56,16 @@ export function AIStudioTool() {
   const suggestTopics = async () => {
     setLoading(true)
     setTopics([])
+    setError(null)
     try {
       const params = new URLSearchParams({ count, ...(category ? { category } : {}) })
       const res = await fetch(`/api/suggest-topics?${params}`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        throw new Error(`API error ${res.status}: ${body.slice(0, 200)}`)
+      }
       const data = await res.json()
+      if (!data.topics?.length) throw new Error('GPT returned no topics — try again')
       setTopics(
         (data.topics ?? []).map((t: Topic, i: number) => ({
           ...t,
@@ -68,8 +74,9 @@ export function AIStudioTool() {
           status: 'idle' as Status,
         }))
       )
-    } catch (err) {
-      console.error('suggest-topics failed:', err)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(msg)
     }
     setLoading(false)
   }
@@ -129,8 +136,8 @@ export function AIStudioTool() {
     setRunningId(null)
   }
 
-  const doneCount = topics.filter(t => t.status === 'done').length
-  const errorCount = topics.filter(t => t.status === 'error').length
+  const doneCount = topics.filter((t: TopicRow) => t.status === 'done').length
+  const errorCount = topics.filter((t: TopicRow) => t.status === 'error').length
 
   return (
     <Box padding={4} style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -183,8 +190,18 @@ export function AIStudioTool() {
         {loading && (
           <Flex align="center" justify="center" padding={6} gap={3}>
             <Spinner muted />
-            <Text muted>GPT-5.5 is finding the best topics...</Text>
+            <Text muted>GPT-5.5 is finding the best topics... (this takes ~15s)</Text>
           </Flex>
+        )}
+
+        {/* Error */}
+        {error && (
+          <Card padding={4} radius={3} tone="critical">
+            <Stack space={2}>
+              <Text weight="semibold" size={1}>Something went wrong</Text>
+              <Text size={1} muted style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>{error}</Text>
+            </Stack>
+          </Card>
         )}
 
         {/* Topics list */}
@@ -227,7 +244,7 @@ export function AIStudioTool() {
         )}
 
         {/* Empty state */}
-        {!loading && topics.length === 0 && (
+        {!loading && !error && topics.length === 0 && (
           <Card padding={6} radius={3} tone="transparent" border>
             <Stack space={3} style={{ textAlign: 'center' }}>
               <Text muted>Click "Suggest Topics" to get fresh AI-generated topic ideas</Text>
