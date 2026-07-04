@@ -6,14 +6,14 @@ export const post = defineType({
   type: 'document',
   orderings: [
     {
+      title: 'Oldest First (default)',
+      name: 'dateAsc',
+      by: [{ field: 'date', direction: 'asc' }],
+    },
+    {
       title: 'Newest First',
       name: 'dateDesc',
       by: [{ field: 'date', direction: 'desc' }],
-    },
-    {
-      title: 'Oldest First',
-      name: 'dateAsc',
-      by: [{ field: 'date', direction: 'asc' }],
     },
     {
       title: 'Title A–Z',

@@ -27,7 +27,7 @@ export default defineConfig({
                 S.documentList()
                   .title('Posts')
                   .filter('_type == "post"')
-                  .defaultOrdering([{ field: 'date', direction: 'desc' }]),
+                  .defaultOrdering([{ field: 'date', direction: 'asc' }]),
               ),
             S.listItem()
               .title('Categories')
