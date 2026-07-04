@@ -4,6 +4,23 @@ export const post = defineType({
   name: 'post',
   title: 'Post',
   type: 'document',
+  orderings: [
+    {
+      title: 'Newest First',
+      name: 'dateDesc',
+      by: [{ field: 'date', direction: 'desc' }],
+    },
+    {
+      title: 'Oldest First',
+      name: 'dateAsc',
+      by: [{ field: 'date', direction: 'asc' }],
+    },
+    {
+      title: 'Title A–Z',
+      name: 'titleAsc',
+      by: [{ field: 'title', direction: 'asc' }],
+    },
+  ],
   fields: [
     defineField({
       name: 'title',
@@ -115,11 +132,4 @@ export const post = defineType({
       }
     },
   },
-  orderings: [
-    {
-      title: 'Published Date (Newest)',
-      name: 'dateDesc',
-      by: [{ field: 'date', direction: 'desc' }],
-    },
-  ],
 })
