@@ -47,6 +47,8 @@ const categoryArg = args.find(a => a.startsWith('--category='))?.split('=')[1] |
 const isDraft = args.includes('--draft')
 const skipImages = args.includes('--skip-images')
 const useHD = args.includes('--hd')
+const imageSource = args.find(a => a.startsWith('--image='))?.split('=')[1] || 'auto'
+// imageSource: 'auto' | 'ideogram' | 'unsplash' | 'ai' | 'none'
 
 if (!topicArg && !batchFile) {
   console.error(`
@@ -56,16 +58,22 @@ Usage:
   node scripts/generate-post.mjs --batch scripts/topics.txt
 
 Options:
-  --category=SLUG   Force a category (ai, technology, business, entertainment, travel, lifestyle)
-  --draft           Save as Sanity draft instead of publishing immediately
-  --skip-images     Skip DALL-E image generation (faster, free)
-  --hd              Use DALL-E 3 HD quality ($0.12/image vs $0.04 standard)
+  --category=SLUG      Force a category (ai, technology, business, entertainment, travel, lifestyle)
+  --draft              Save as Sanity draft instead of publishing immediately
+  --skip-images        Skip all image generation
+  --image=ideogram     Use Ideogram v2 (text-in-image, $0.08, needs IDEOGRAM_API_KEY)
+  --image=unsplash     Use Unsplash real photos (free, needs UNSPLASH_ACCESS_KEY)
+  --image=ai           Use OpenAI gpt-image-1 (needs OPENAI_API_KEY)
+  --image=auto         Best available source: ideogram > unsplash > ai (default)
+  --hd                 Higher quality for AI/Ideogram images
 `)
   process.exit(1)
 }
 
 // ─── Validate env ─────────────────────────────────────────────────────────────
 const OPENAI_KEY = process.env.OPENAI_API_KEY
+const IDEOGRAM_KEY = process.env.IDEOGRAM_API_KEY
+const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY
 const PROJECT_ID = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || process.env.SANITY_PROJECT_ID
 const DATASET = process.env.NEXT_PUBLIC_SANITY_DATASET || process.env.SANITY_DATASET || 'production'
 const TOKEN = process.env.SANITY_WRITE_TOKEN
@@ -73,6 +81,9 @@ const TOKEN = process.env.SANITY_WRITE_TOKEN
 if (!OPENAI_KEY) { console.error('❌ OPENAI_API_KEY not set in .env.local'); process.exit(1) }
 if (!PROJECT_ID) { console.error('❌ NEXT_PUBLIC_SANITY_PROJECT_ID not set'); process.exit(1) }
 if (!TOKEN) { console.error('❌ SANITY_WRITE_TOKEN not set'); process.exit(1) }
+
+if (IDEOGRAM_KEY) console.log('✅ Ideogram API key loaded')
+if (UNSPLASH_KEY) console.log('✅ Unsplash API key loaded')
 
 // ─── Clients ──────────────────────────────────────────────────────────────────
 const openaiClient = new OpenAI({ apiKey: OPENAI_KEY })
@@ -107,11 +118,65 @@ async function callOpenAI(messages, jsonMode = false) {
   return response.choices[0].message.content
 }
 
-async function generateImage(prompt) {
-  const fullPrompt = `${prompt} Editorial photography style, 16:9 composition, cinematic lighting, high quality, no text, no watermarks, no logos.`
+// ─── Ideogram image generation ────────────────────────────────────────────────
+async function generateImageIdeogram(title, visualPrompt) {
+  if (!IDEOGRAM_KEY) throw new Error('IDEOGRAM_API_KEY not set')
 
-  // Try dall-e-3 first, fall back to gpt-image-1 for newer project API keys
-  let imageUrl
+  // Craft a prompt that embeds the title as styled text in the image
+  const prompt = `"${title}" — bold clean typography over a ${visualPrompt}. Professional editorial thumbnail, dark background with vibrant accent colours, magazine quality, 16:9 web banner, high contrast readable text`
+
+  const res = await fetch('https://api.ideogram.ai/generate', {
+    method: 'POST',
+    headers: {
+      'Api-Key': IDEOGRAM_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      image_request: {
+        prompt,
+        model: 'V_2',
+        aspect_ratio: 'ASPECT_16_9',
+        style_type: 'DESIGN',
+        negative_prompt: 'blurry, low quality, watermark, ugly, distorted text, illegible',
+        ...(useHD && { magic_prompt_option: 'ON' }),
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Ideogram API error ${res.status}: ${err}`)
+  }
+
+  const data = await res.json()
+  const url = data.data?.[0]?.url
+  if (!url) throw new Error('Ideogram returned no image URL')
+  return { url }
+}
+
+// ─── Unsplash image search ─────────────────────────────────────────────────────
+async function searchUnsplash(keywords) {
+  if (!UNSPLASH_KEY) throw new Error('UNSPLASH_ACCESS_KEY not set')
+
+  const query = encodeURIComponent(keywords.slice(0, 3).join(' '))
+  const res = await fetch(
+    `https://api.unsplash.com/search/photos?query=${query}&per_page=5&orientation=landscape&content_filter=high`,
+    { headers: { Authorization: `Client-ID ${UNSPLASH_KEY}` } }
+  )
+
+  if (!res.ok) throw new Error(`Unsplash API error ${res.status}`)
+  const data = await res.json()
+  if (!data.results?.length) throw new Error('No Unsplash results found')
+
+  // Pick the highest-quality result (sort by downloads)
+  const best = data.results.sort((a, b) => b.downloads - a.downloads)[0]
+  return { url: best.urls.regular, unsplashCredit: `${best.user.name} on Unsplash` }
+}
+
+// ─── OpenAI image generation (fallback) ───────────────────────────────────────
+async function generateImageAI(visualPrompt) {
+  const fullPrompt = `${visualPrompt} Editorial photography style, 16:9 composition, cinematic lighting, high quality, no text, no watermarks, no logos.`
+
   try {
     const response = await openaiClient.images.generate({
       model: 'dall-e-3',
@@ -120,10 +185,10 @@ async function generateImage(prompt) {
       quality: useHD ? 'hd' : 'standard',
       n: 1,
     })
-    imageUrl = response.data[0].url
+    return { url: response.data[0].url }
   } catch (err) {
     if (err.message?.includes('does not exist') || err.status === 400) {
-      console.log('  ↩️  dall-e-3 unavailable, trying gpt-image-1...')
+      console.log('  ↩️  dall-e-3 unavailable, using gpt-image-1...')
       const response = await openaiClient.images.generate({
         model: 'gpt-image-1',
         prompt: fullPrompt,
@@ -131,16 +196,45 @@ async function generateImage(prompt) {
         quality: useHD ? 'high' : 'medium',
         n: 1,
       })
-      // gpt-image-1 returns base64, not a URL
-      if (response.data[0].b64_json) {
-        return { b64: response.data[0].b64_json }
-      }
-      imageUrl = response.data[0].url
-    } else {
-      throw err
+      if (response.data[0].b64_json) return { b64: response.data[0].b64_json }
+      return { url: response.data[0].url }
     }
+    throw err
   }
-  return { url: imageUrl }
+}
+
+// ─── Image router ──────────────────────────────────────────────────────────────
+async function getImage(title, imagePrompt, tags) {
+  const source = skipImages ? 'none' : imageSource
+
+  if (source === 'none') return null
+
+  if (source === 'ideogram') {
+    console.log(`  🎨 Ideogram v2 generating branded thumbnail...`)
+    return generateImageIdeogram(title, imagePrompt)
+  }
+
+  if (source === 'unsplash') {
+    console.log(`  📷 Unsplash searching for real photo...`)
+    return searchUnsplash(tags)
+  }
+
+  if (source === 'ai') {
+    console.log(`  🤖 OpenAI generating image...`)
+    return generateImageAI(imagePrompt)
+  }
+
+  // auto — try best available in order: ideogram > unsplash > ai
+  if (IDEOGRAM_KEY) {
+    console.log(`  🎨 [auto] Ideogram v2 generating branded thumbnail...`)
+    return generateImageIdeogram(title, imagePrompt)
+  }
+  if (UNSPLASH_KEY) {
+    console.log(`  📷 [auto] Unsplash searching for real photo...`)
+    return searchUnsplash(tags)
+  }
+  console.log(`  🤖 [auto] OpenAI generating image (no Ideogram/Unsplash key found)...`)
+  return generateImageAI(imagePrompt)
 }
 
 // ─── Content generation ────────────────────────────────────────────────────────
@@ -261,7 +355,8 @@ async function createSanityPost({ content, featuredImage, categoryRefs, tagRefs,
 async function processOneTopic(topic, category) {
   console.log(`\n🚀 Generating: "${topic}"`)
   console.log(`   Category override: ${category || 'auto-detect'}`)
-  console.log(`   Mode: ${isDraft ? 'draft' : 'publish'} | Images: ${skipImages ? 'skip' : useHD ? 'DALL-E 3 HD' : 'DALL-E 3 standard'}`)
+  const imgMode = skipImages ? 'skip' : `${imageSource}${useHD ? ' HD' : ''}`
+  console.log(`   Mode: ${isDraft ? 'draft' : 'publish'} | Images: ${imgMode}`)
 
   // 1. Content
   const content = await generateContent(topic, category)
@@ -271,15 +366,15 @@ async function processOneTopic(topic, category) {
 
   // 2. Image
   let featuredImage = null
-  if (!skipImages) {
-    try {
-      console.log(`  🎨 DALL-E 3 generating image (${useHD ? 'HD $0.12' : 'standard $0.04'})...`)
-      const imageResult = await generateImage(content.imagePrompt)
+  try {
+    const imageResult = await getImage(content.title, content.imagePrompt, content.tags || [])
+    if (imageResult) {
       featuredImage = await uploadImageToSanity(imageResult, `${content.slug}-hero.png`)
-      console.log(`  ✅ Image ready`)
-    } catch (err) {
-      console.warn(`  ⚠️  Image failed: ${err.message} — continuing without image`)
+      if (imageResult.unsplashCredit) console.log(`  ✅ Image ready (credit: ${imageResult.unsplashCredit})`)
+      else console.log(`  ✅ Image ready`)
     }
+  } catch (err) {
+    console.warn(`  ⚠️  Image failed: ${err.message} — continuing without image`)
   }
 
   // 3. Categories + tags
