@@ -279,9 +279,17 @@ ${relatedLinks.map(p => `- ${p.title} → https://allyouneedislists.com${p.fullP
 LINKING RULES (follow exactly):
 - Internal links: use plain <a href="/path">anchor text</a> — no target or rel attributes
 - External links: always use <a href="URL" target="_blank" rel="noopener noreferrer">anchor text</a>
-- External links must go to Wikipedia, official brand sites, .gov/.edu, or major publications only
-- Include 2-3 external authority links naturally within item descriptions (not all in one place)
-- Include 2-3 internal links to our related articles if provided — only where genuinely relevant`
+
+EXTERNAL LINKS (4–5 per article at this length):
+- Destinations: Wikipedia for concepts/background, official brand or product pages, .gov/.edu for stats, or major publications (BBC, Forbes, Reuters) for studies/data
+- Spread them across different list items — never two in the same paragraph
+- 1 may appear in the intro or conclusion if citing a specific statistic
+- Vary the destinations — do not link to Wikipedia more than twice
+- Anchor text should be descriptive, not "click here" or the raw URL
+
+INTERNAL LINKS (2–3 if related articles are provided):
+- Only link where genuinely relevant to the item being described
+- Do not force links — omit if nothing fits naturally`
 
   const contentStructure = `Structure the "content" field HTML EXACTLY like this — no exceptions:
 

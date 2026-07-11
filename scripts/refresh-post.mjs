@@ -190,7 +190,13 @@ async function generateContent(topicTitle, category) {
   const messages = [
     {
       role: 'system',
-      content: `You are a senior editor at "All You Need Is Lists". Write 3,000–3,500 word listicles with specific real-world details, prices, stats, and named examples. Direct, confident second-person voice.`,
+      content: `You are a senior editor at "All You Need Is Lists". Write 3,000–3,500 word listicles with specific real-world details, prices, stats, and named examples. Direct, confident second-person voice. Demonstrates E-E-A-T.
+
+LINKING RULES:
+- Internal links: <a href="/path">text</a> — no target or rel
+- External links: <a href="URL" target="_blank" rel="noopener noreferrer">text</a>
+- External links (4–5 per article): Wikipedia, official brand/product pages, .gov/.edu, or major publications (BBC, Forbes, Reuters). Spread across different items, never two in one paragraph. Vary destinations, no more than 2 Wikipedia links. Descriptive anchor text only.
+- Internal links (2–3 if provided): only where genuinely relevant, never forced.`,
     },
     {
       role: 'user',
