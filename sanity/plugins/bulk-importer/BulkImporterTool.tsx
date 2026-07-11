@@ -1,5 +1,5 @@
-import { useState, useCallback, useId } from 'react'
-import type { FormEvent } from 'react'
+import { useState, useCallback, useId, useRef } from 'react'
+import type { FormEvent, DragEvent } from 'react'
 import {
   Box, Button, Card, Flex, Select, Spinner,
   Stack, Text, Badge, Heading, TextInput, TextArea,
@@ -54,6 +54,10 @@ export function BulkImporterTool() {
   const [pasteMode, setPasteMode] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [pasteError, setPasteError] = useState('')
+  const [dragOver, setDragOver] = useState(false)
+  const [parsing, setParsing] = useState(false)
+  const [parseLog, setParseLog] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const uid = useId()
 
   const updateRow = useCallback((id: string, patch: Partial<Row>) => {
@@ -63,6 +67,76 @@ export function BulkImporterTool() {
   const addRow = () => setRows(prev => [...prev, makeRow()])
   const removeRow = (id: string) => setRows(prev => prev.filter(r => r.id !== id))
   const toggleRow = (id: string) => setRows(prev => prev.map(r => r.id === id ? { ...r, expanded: !r.expanded } : r))
+
+  const handleFiles = useCallback(async (files: FileList | File[]) => {
+    const list = Array.from(files)
+    if (!list.length) return
+    setParsing(true)
+    setParseLog(`Parsing ${list.length} file${list.length > 1 ? 's' : ''}…`)
+
+    const newRows: Row[] = []
+
+    for (const file of list) {
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+      setParseLog(`Parsing ${file.name}…`)
+
+      try {
+        if (ext === 'txt' || ext === 'md' || ext === 'markdown' || ext === 'html') {
+          // Browser-side — no round-trip needed
+          const text = await file.text()
+          const parsed = browserParseText(text, file.name)
+          newRows.push(makeRow({ title: parsed.title, rawContent: parsed.rawContent, links: parsed.links.join('\n') }))
+        } else {
+          // Server-side: DOCX, PDF, CSV
+          const fd = new FormData()
+          fd.append('file', file)
+          const res = await fetch('/api/parse-document', { method: 'POST', body: fd })
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          const parsed = await res.json()
+          if (parsed.error) throw new Error(parsed.error)
+          if (parsed.type === 'csv') {
+            newRows.push(...(parsed.rows as Partial<Row>[]).map(r => makeRow(r)))
+          } else {
+            newRows.push(makeRow({ title: parsed.title, rawContent: parsed.rawContent, links: (parsed.links as string[]).join('\n') }))
+          }
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        newRows.push(makeRow({ title: file.name.replace(/\.[^.]+$/, ''), rawContent: `⚠️ Parse failed: ${msg}` }))
+      }
+    }
+
+    // Replace placeholder empty row if only one exists
+    setRows(prev => {
+      const isEmpty = prev.length === 1 && !prev[0].title && !prev[0].rawContent
+      return isEmpty ? newRows : [...prev, ...newRows]
+    })
+    setParsing(false)
+    setParseLog('')
+  }, [])
+
+  const onDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setDragOver(false)
+    handleFiles(e.dataTransfer.files)
+  }, [handleFiles])
+
+  const onDragOver = (e: DragEvent<HTMLDivElement>) => { e.preventDefault(); setDragOver(true) }
+  const onDragLeave = () => setDragOver(false)
+
+  // Browser-side text parser
+  function browserParseText(text: string, filename: string) {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+    let title = ''
+    for (const line of lines) {
+      const clean = line.replace(/^#{1,3}\s+/, '').replace(/^\*+|\*+$/g, '').trim()
+      if (clean.length >= 8 && clean.length <= 120 && !/^https?:\/\//.test(clean)) { title = clean; break }
+    }
+    if (!title) title = filename.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ')
+    const links = [...new Set((text.match(/https?:\/\/[^\s\)>\]"',]+/g) ?? []))].slice(0, 30)
+    const rawContent = text.replace(/^#{1,3}\s+.*$/m, '').trim().slice(0, 12000)
+    return { title, rawContent, links, type: 'doc' as const }
+  }
 
   // Parse pasted CSV / plain list
   const parsePaste = () => {
@@ -155,10 +229,48 @@ export function BulkImporterTool() {
           <Stack space={1}>
             <Heading size={3}>Bulk Post Importer</Heading>
             <Text muted size={1}>
-              Paste your lists with content, links & notes — AI formats everything, generates images, publishes automatically
+              Drop your documents or paste lists — AI formats everything, generates images &amp; publishes automatically
             </Text>
           </Stack>
         </Flex>
+
+        {/* File drop zone */}
+        <div
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onClick={() => !parsing && fileInputRef.current?.click()}
+          style={{
+            border: `2px dashed ${dragOver ? '#E63946' : 'rgba(255,255,255,0.15)'}`,
+            borderRadius: 12,
+            padding: '28px 24px',
+            textAlign: 'center',
+            cursor: parsing ? 'wait' : 'pointer',
+            background: dragOver ? 'rgba(230,57,70,0.06)' : 'rgba(255,255,255,0.02)',
+            transition: 'all 0.15s',
+          }}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".txt,.md,.markdown,.docx,.pdf,.csv,.html"
+            style={{ display: 'none' }}
+            onChange={e => e.target.files && handleFiles(e.target.files)}
+          />
+          {parsing ? (
+            <Flex align="center" justify="center" gap={3}>
+              <Spinner />
+              <Text muted>{parseLog}</Text>
+            </Flex>
+          ) : (
+            <Stack space={2}>
+              <Text weight="semibold">📎 Drop files here or click to browse</Text>
+              <Text muted size={1}>Supports: .docx &nbsp;·&nbsp; .pdf &nbsp;·&nbsp; .txt &nbsp;·&nbsp; .md &nbsp;·&nbsp; .csv</Text>
+              <Text muted size={1}>Each file becomes a pre-filled row — title, content &amp; links extracted automatically</Text>
+            </Stack>
+          )}
+        </div>
 
         {/* Toolbar */}
         <Flex align="center" justify="space-between" gap={2} style={{ flexWrap: 'wrap' }}>
