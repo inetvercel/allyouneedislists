@@ -18,6 +18,23 @@ import type { PostFull, Category } from '@/types'
 
 const PER_PAGE = 18
 
+function extractFaqs(html: string): { q: string; a: string }[] {
+  const faqs: { q: string; a: string }[] = []
+  const itemRe = /<div[^>]*class="faq-item"[^>]*>([\s\S]*?)<\/div>/gi
+  let item
+  while ((item = itemRe.exec(html)) !== null) {
+    const inner = item[1]
+    const qMatch = inner.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)
+    const aMatch = inner.match(/<p[^>]*>([\s\S]*?)<\/p>/i)
+    if (qMatch && aMatch) {
+      const q = qMatch[1].replace(/<[^>]+>/g, '').trim()
+      const a = aMatch[1].replace(/<[^>]+>/g, '').trim()
+      if (q && a) faqs.push({ q, a })
+    }
+  }
+  return faqs
+}
+
 function cleanWordPressHtml(html: string): string {
   let clean = html
 
@@ -219,6 +236,8 @@ export default async function SlugPage({
       { label: post.title, href: fullPath },
     ]
 
+    const faqs = extractFaqs(cleanedContent)
+
     const jsonLd = {
       '@context': 'https://schema.org',
       '@graph': [
@@ -229,11 +248,31 @@ export default async function SlugPage({
           dateModified: post.updatedAt || post.date,
           description: post.seoDescription || post.excerpt?.replace(/<[^>]*>/g, '').slice(0, 200),
           url: `https://allyouneedislists.com${fullPath}`,
-          ...(imageUrl && { image: { '@type': 'ImageObject', url: imageUrl } }),
+          ...(imageUrl && {
+            image: {
+              '@type': 'ImageObject',
+              url: imageUrl,
+              width: 1200,
+              height: 630,
+            },
+          }),
+          author: {
+            '@type': 'Organization',
+            name: 'All You Need Is Lists',
+            url: 'https://allyouneedislists.com',
+          },
           publisher: {
             '@type': 'Organization',
             name: 'All You Need Is Lists',
             url: 'https://allyouneedislists.com',
+            logo: {
+              '@type': 'ImageObject',
+              url: 'https://allyouneedislists.com/logo.png',
+            },
+          },
+          mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': `https://allyouneedislists.com${fullPath}`,
           },
         },
         {
@@ -245,6 +284,19 @@ export default async function SlugPage({
             item: `https://allyouneedislists.com${crumb.href}`,
           })),
         },
+        ...(faqs.length > 0
+          ? [{
+              '@type': 'FAQPage',
+              mainEntity: faqs.map(({ q, a }) => ({
+                '@type': 'Question',
+                name: q,
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: a,
+                },
+              })),
+            }]
+          : []),
       ],
     }
 
