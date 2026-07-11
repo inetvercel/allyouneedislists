@@ -21,37 +21,76 @@ const PER_PAGE = 18
 function cleanWordPressHtml(html: string): string {
   let clean = html
 
-  // Remove wrapping post-content div
+  // ── Remove junk blocks ────────────────────────────────────────────────────
   clean = clean.replace(/<div[^>]*class="post-content"[^>]*>/gi, '')
-
-  // Remove social share buttons block
   clean = clean.replace(/<div[^>]*class="[^"]*wp-socializer[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
-
-  // Remove ad script blocks
+  clean = clean.replace(/<div[^>]*class="[^"]*sharedaddy[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
+  clean = clean.replace(/<div[^>]*class="[^"]*jp-relatedposts[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
+  clean = clean.replace(/<div[^>]*class="[^"]*wpcnt[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
   clean = clean.replace(/<div[^>]*>[^<]*<script[^>]*>[\s\S]*?<\/script>[^<]*<\/div>/gi, '')
   clean = clean.replace(/<script[\s\S]*?<\/script>/gi, '')
-
-  // Remove wpsr anchor spans
+  clean = clean.replace(/<style[\s\S]*?<\/style>/gi, '')
   clean = clean.replace(/<span[^>]*class="wpsr_floatbts_anchor"[^>]*><\/span>/gi, '')
 
-  // Convert [dropcap]X[/dropcap] shortcodes
+  // ── WP shortcodes ─────────────────────────────────────────────────────────
   clean = clean.replace(/\[dropcap\](.*?)\[\/dropcap\]/gi, '$1')
-
-  // Convert [button color="..." link="url" target="..."]Text[/button]
   clean = clean.replace(
     /\[button[^\]]*link=["&#8221;]([^"&#8221;\]]+)["&#8221;][^\]]*\](.*?)\[\/button\]/gi,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="wp-btn-link">$2</a>'
   )
-
-  // Remove remaining shortcodes
+  clean = clean.replace(/\[caption[^\]]*\]([\s\S]*?)\[\/caption\]/gi, '$1')
   clean = clean.replace(/\[[^\]]+\]/g, '')
 
-  // Fix encoded quotes in attributes
-  clean = clean.replace(/&#8221;/g, '"').replace(/&#8220;/g, '"')
+  // ── Gutenberg / WP block wrappers (unwrap, keep inner content) ────────────
+  clean = clean.replace(/<figure[^>]*class="[^"]*wp-block[^"]*"[^>]*>([\s\S]*?)<\/figure>/gi, '$1')
+  clean = clean.replace(/<div[^>]*class="[^"]*wp-block[^"]*"[^>]*>([\s\S]*?)<\/div>/gi, '$1')
+  clean = clean.replace(/<div[^>]*class="[^"]*aligncenter[^"]*"[^>]*>([\s\S]*?)<\/div>/gi, '$1')
 
-  // Remove empty paragraphs
+  // ── Strip legacy / inline presentation elements ───────────────────────────
+  clean = clean.replace(/<font[^>]*>([\s\S]*?)<\/font>/gi, '$1')
+  clean = clean.replace(/<center>([\s\S]*?)<\/center>/gi, '$1')
+  clean = clean.replace(/<span\s+style="[^"]*"[^>]*>([\s\S]*?)<\/span>/gi, '$1')
+  clean = clean.replace(/\s+style="[^"]*"/gi, '')
+
+  // ── Fix WP special characters ─────────────────────────────────────────────
+  clean = clean.replace(/&#8221;/g, '"').replace(/&#8220;/g, '"')
+  clean = clean.replace(/&#8217;/g, "'").replace(/&#8216;/g, "'")
+  clean = clean.replace(/&#8212;/g, '—').replace(/&#8211;/g, '–')
+  clean = clean.replace(/&#8230;/g, '…')
+  clean = clean.replace(/&nbsp;/g, ' ')
+
+  // ── Secure all external links ─────────────────────────────────────────────
+  // Add target="_blank" + rel="noopener noreferrer" to any outbound link
+  clean = clean.replace(
+    /<a\s([^>]*href="https?:\/\/(?!allyouneedislists\.com)[^"]*"[^>]*)>/gi,
+    (match, attrs) => {
+      const hasTarget = /target=/i.test(attrs)
+      const hasRel = /rel=/i.test(attrs)
+      let out = attrs
+      if (!hasTarget) out += ' target="_blank"'
+      if (!hasRel) out += ' rel="noopener noreferrer"'
+      else out = out.replace(/rel="([^"]*)"/i, 'rel="noopener noreferrer $1"')
+      return `<a ${out}>`
+    }
+  )
+
+  // ── Images: lazy-load, remove dead WP CDN src ─────────────────────────────
+  clean = clean.replace(/<img([^>]*)>/gi, (match, attrs) => {
+    const isDead = /src="https?:\/\/(?!cdn\.sanity\.io)[^"]*allyouneedislists\.com[^"]*"/i.test(attrs)
+    if (isDead) return ''
+    const hasLazy = /loading=/i.test(attrs)
+    return `<img${attrs}${hasLazy ? '' : ' loading="lazy"'}>`
+  })
+  clean = clean.replace(/<figure[^>]*>\s*<\/figure>/gi, '')
+
+  // ── Empty elements ────────────────────────────────────────────────────────
   clean = clean.replace(/<p>\s*<\/p>/gi, '')
   clean = clean.replace(/<p>\s*<span>\s*<\/span>\s*<\/p>/gi, '')
+  clean = clean.replace(/<h[1-6]>\s*<\/h[1-6]>/gi, '')
+  clean = clean.replace(/<div>\s*<\/div>/gi, '')
+
+  // ── Normalise whitespace ──────────────────────────────────────────────────
+  clean = clean.replace(/\n{3,}/g, '\n\n')
 
   return clean.trim()
 }

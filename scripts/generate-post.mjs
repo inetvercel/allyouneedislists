@@ -246,16 +246,40 @@ async function getImage(title, imagePrompt, tags) {
   return generateImageAI(imagePrompt)
 }
 
+// ─── Fetch candidate posts for contextual internal linking ──────────────────
+async function fetchLinksForPrompt(category) {
+  const slugs = CATEGORY_MAP[category] || [category]
+  const posts = await sanity.fetch(
+    `*[_type == "post" && !(_id in path("drafts.**")) && !defined(redirectTo) && references(*[_type=="category" && slug.current in $slugs]._id)] | order(date desc) [0...15] { title, fullPath }`,
+    { slugs }
+  ).catch(() => [])
+  return posts
+}
+
 // ─── Content generation ────────────────────────────────────────────────────────
 async function generateContent(topic, category) {
   console.log(`  📝 GPT-5.5 generating content...`)
+
+  const relatedLinks = await fetchLinksForPrompt(category)
+  const internalLinksBlock = relatedLinks.length
+    ? `EXISTING ARTICLES ON OUR SITE (link to 2-3 of these naturally within the body if genuinely relevant — use exact URLs, internal links only, no target/_blank):
+${relatedLinks.map(p => `- ${p.title} → https://allyouneedislists.com${p.fullPath}`).join('\n')}`
+    : ''
 
   const system = `You are a senior editor at "All You Need Is Lists", a top-ranked listicle publication. Every article you write:
 - Is 3,000–3,500 words of genuinely useful, expert-level content
 - Contains specific real-world details, prices, stats, and named examples — never vague generalisations
 - Uses a direct, confident second-person voice ("you", "your")
 - Is structured for Google featured snippets and rich results
-- Follows a strict HTML structure (described below) — no deviation`
+- Demonstrates E-E-A-T: cite real data, name real products/services/places with accurate details
+- Follows a strict HTML structure (described below) — no deviation
+
+LINKING RULES (follow exactly):
+- Internal links: use plain <a href="/path">anchor text</a> — no target or rel attributes
+- External links: always use <a href="URL" target="_blank" rel="noopener noreferrer">anchor text</a>
+- External links must go to Wikipedia, official brand sites, .gov/.edu, or major publications only
+- Include 2-3 external authority links naturally within item descriptions (not all in one place)
+- Include 2-3 internal links to our related articles if provided — only where genuinely relevant`
 
   const contentStructure = `Structure the "content" field HTML EXACTLY like this — no exceptions:
 
@@ -286,7 +310,7 @@ async function generateContent(topic, category) {
   const user = `Write a complete, publication-ready listicle about: "${topic}"
 ${category ? `Suggested category: ${category}` : ''}
 
-${contentStructure}
+${internalLinksBlock ? internalLinksBlock + '\n\n' : ''}${contentStructure}
 
 Return ONLY valid JSON — no markdown, no code fences:
 {
