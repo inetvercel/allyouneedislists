@@ -13,6 +13,22 @@ const nextConfig: NextConfig = {
         destination: '/about',
         permanent: true,
       },
+      // Chicago sports fan post — old thin WP posts replaced by AI refresh
+      {
+        source: '/lifestyle/5-places-to-visit-in-chicago-if-youre-a-sports-fan',
+        destination: '/lifestyle/chicago-sports-fan-spots',
+        permanent: true,
+      },
+      {
+        source: '/lifestyle/travel/5-places-to-visit-in-chicago-if-youre-a-sports-fan',
+        destination: '/lifestyle/chicago-sports-fan-spots',
+        permanent: true,
+      },
+      {
+        source: '/lifestyle/travel-leisure/5-places-to-visit-in-chicago-if-youre-a-sports-fan',
+        destination: '/lifestyle/chicago-sports-fan-spots',
+        permanent: true,
+      },
     ]
   },
   images: {

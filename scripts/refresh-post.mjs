@@ -315,13 +315,17 @@ async function main() {
 
   // 8. Optionally delete old posts
   if (shouldDelete) {
-    console.log(`\n🗑️  Deleting ${oldPosts.length} old post(s)...`)
+    console.log(`\n⚠️  Deleting old posts — redirectTo stubs will be gone.`)
+    console.log(`   You MUST add these to next.config.ts redirects() manually or the old URLs will 404:`)
+    for (const old of oldPosts) console.log(`     ${old.fullPath}  →  ${newFullPath}`)
+    console.log()
     for (const old of oldPosts) {
       await sanity.delete(old._id)
       console.log(`  ✅ Deleted ${old._id} (${old.fullPath})`)
     }
   } else {
-    console.log(`\n💡 Old posts kept as redirect stubs. Run with --delete to remove them.`)
+    console.log(`\n✅ Old posts kept as redirect stubs in Sanity (recommended).`)
+    console.log(`   The 301 redirect is handled automatically by the route — no code change needed.`)
   }
 
   console.log(`\n✅ Done!`)
