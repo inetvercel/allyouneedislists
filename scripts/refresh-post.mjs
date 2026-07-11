@@ -173,10 +173,10 @@ async function generateContent(topicTitle, category) {
 
 1. INTRO — 2-3 sentences explaining what this list covers and why it matters.
 
-2. LIST ENTRIES — list EVERY item (no maximum, as many as actually exist). For each:
-<h2>N. [Item Title] ([Year])</h2>
-<p class="best-for"><strong>Director/Creator:</strong> [name] &nbsp;|&nbsp; <strong>Runtime:</strong> [length] &nbsp;|&nbsp; <strong>Starring:</strong> [key names]</p>
-<p>[2-3 sentences: plot summary, significance, what makes it stand out in the series]</p>
+2. LIST ENTRIES — list EVERY individual item as its OWN numbered entry (do NOT group multiple items together into an era, category, or period — each entry = one item). For each:
+<h2>N. [Item Title] ([Year if applicable])</h2>
+<p class="best-for"><strong>Key detail:</strong> [director/creator/party/role/artist etc.] &nbsp;|&nbsp; <strong>When:</strong> [year or period]</p>
+<p>[2-3 sentences: what it is, why it matters, what makes it notable]</p>
 
 IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment on its own line:
 <!-- IMAGE: [25-word photorealistic prompt for a scene related to this section] -->
@@ -230,14 +230,16 @@ LINKING RULES:
     },
     {
       role: 'user',
-      content: `Write a complete listicle about: "${topicTitle}"
+      content: `Write a complete ${comprehensive ? 'reference article' : 'listicle'} about: "${topicTitle}"
 ${category ? `Category: ${category}` : ''}
 
 ${contentStructure}
 
+CRITICAL TITLE RULE: Never include a specific number in the title (e.g. "All 44" or "25 Films") unless your content actually contains exactly that many individual entries. If unsure of the exact count, use a non-numeric title.
+
 Return ONLY valid JSON:
 {
-  "title": "Punchy title under 65 chars, no year",
+  "title": "Accurate title under 65 chars — must not promise a count the content doesn't deliver",
   "slug": "3-5 word slug, no stop words, no year",
   "excerpt": "2-sentence summary for SEO, under 160 chars",
   "content": "<full HTML>",

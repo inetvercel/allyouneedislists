@@ -298,10 +298,10 @@ INTERNAL LINKS (2–3 if related articles are provided):
 
 1. INTRO — 2-3 sentences explaining what this list covers and why it matters.
 
-2. LIST ENTRIES — list EVERY item that genuinely belongs (no arbitrary cap). For each:
-<h2>N. [Item Title] ([Year])</h2>
-<p class="best-for"><strong>Director/Creator:</strong> [name] &nbsp;|&nbsp; <strong>Runtime:</strong> [length] &nbsp;|&nbsp; <strong>Starring:</strong> [key names]</p>
-<p>[2-3 sentences: what it is, its significance, what makes it stand out]</p>
+2. LIST ENTRIES — list EVERY individual item as its OWN numbered entry (do NOT group multiple items into an era, category, or period — each entry = exactly one item). For each:
+<h2>N. [Item Title] ([Year if applicable])</h2>
+<p class="best-for"><strong>Key detail:</strong> [director/creator/party/role/artist etc.] &nbsp;|&nbsp; <strong>When:</strong> [year or period]</p>
+<p>[2-3 sentences: what it is, why it matters, what makes it notable]</p>
 
 IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment on its own line:
 <!-- IMAGE: [25-word photorealistic prompt for a scene related to this section] -->
@@ -342,14 +342,16 @@ IMAGE PLACEHOLDERS: After item 4 and after item 8, insert exactly this comment o
 [6 to 8 faq-item divs covering the most common reader questions]
 </div>`
 
-  const user = `Write a complete, publication-ready listicle about: "${topic}"
+  const user = `Write a complete, publication-ready ${isComprehensive ? 'reference article' : 'listicle'} about: "${topic}"
 ${category ? `Suggested category: ${category}` : ''}
 
 ${internalLinksBlock ? internalLinksBlock + '\n\n' : ''}${contentStructure}
 
+CRITICAL TITLE RULE: Never include a specific number in the title (e.g. "All 44" or "25 Films") unless your content actually contains exactly that many individual entries. If unsure of the exact count, omit the number from the title.
+
 Return ONLY valid JSON — no markdown, no code fences:
 {
-  "title": "Punchy, benefit-driven title under 65 characters. No year.",
+  "title": "Accurate title under 65 chars — must not promise a count the content doesn't deliver",
   "slug": "3-5 word slug — no year, no stop words (the/a/an/for/in/of/to/by). Example: best-budget-laptops-students",
   "excerpt": "Compelling 150-160 character summary that creates urgency to click",
   "seoTitle": "SEO title under 60 characters with primary keyword near the start",
