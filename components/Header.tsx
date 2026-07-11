@@ -88,11 +88,11 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center group">
             <Image
-              src="https://cdn.sanity.io/images/1z2ohlkj/production/b369cbd326864947b294e4298083fdde378e27a3-876x588.png"
+              src="https://cdn.sanity.io/images/1z2ohlkj/production/594d0db86b64611dcd111eff3b1a3d0e895d5c48-906x333.jpg"
               alt="All You Need Is Lists"
-              width={132}
-              height={89}
-              className="h-9 w-auto object-contain"
+              width={160}
+              height={59}
+              className="h-8 w-auto object-contain"
               priority
             />
           </Link>
