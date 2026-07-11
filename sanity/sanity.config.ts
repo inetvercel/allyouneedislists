@@ -2,6 +2,7 @@ import { defineConfig } from 'sanity'
 import { structureTool } from 'sanity/structure'
 import { visionTool } from '@sanity/vision'
 import { media } from 'sanity-plugin-media'
+import { codeInput } from '@sanity/code-input'
 import { schemaTypes } from './schemaTypes'
 import { aiStudioPlugin } from './plugins/ai-studio'
 
@@ -41,5 +42,6 @@ export default defineConfig({
     visionTool(),
     aiStudioPlugin(),
     media(),
+    codeInput(),
   ],
 })

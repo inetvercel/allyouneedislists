@@ -1,4 +1,5 @@
 import { defineField, defineType } from 'sanity'
+import { HtmlEditorInput } from '../components/HtmlEditorInput'
 
 export const post = defineType({
   name: 'post',
@@ -67,7 +68,7 @@ export const post = defineType({
       name: 'content',
       title: 'Content (HTML)',
       type: 'text',
-      rows: 20,
+      components: { input: HtmlEditorInput },
     }),
     defineField({
       name: 'categories',
