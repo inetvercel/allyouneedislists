@@ -249,8 +249,10 @@ async function getImage(title, imagePrompt, tags) {
 // ─── Fetch candidate posts for contextual internal linking ──────────────────
 async function fetchLinksForPrompt(category) {
   const slugs = CATEGORY_MAP[category] || [category]
+  // Only link to AI-generated posts — their URLs are stable.
+  // Old WP posts will get new URLs when refreshed, making those links redirect hops.
   const posts = await sanity.fetch(
-    `*[_type == "post" && !(_id in path("drafts.**")) && !defined(redirectTo) && references(*[_type=="category" && slug.current in $slugs]._id)] | order(date desc) [0...15] { title, fullPath }`,
+    `*[_type == "post" && !(_id in path("drafts.**")) && aiGenerated == true && !defined(redirectTo) && references(*[_type=="category" && slug.current in $slugs]._id)] | order(date desc) [0...15] { title, fullPath }`,
     { slugs }
   ).catch(() => [])
   return posts

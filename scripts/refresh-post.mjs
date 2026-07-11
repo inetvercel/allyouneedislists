@@ -146,7 +146,7 @@ async function findRelatedPosts(slug, categoryRefs) {
   const catIds = categoryRefs.map(r => r._ref)
   if (!catIds.length) return []
   return sanity.fetch(
-    `*[_type=="post" && slug.current != $slug && count((categories[]._ref)[@ in $catIds]) > 0] | order(date desc)[0...4] { title, fullPath }`,
+    `*[_type=="post" && aiGenerated == true && !defined(redirectTo) && slug.current != $slug && count((categories[]._ref)[@ in $catIds]) > 0] | order(date desc)[0...4] { title, fullPath }`,
     { slug, catIds }
   )
 }
