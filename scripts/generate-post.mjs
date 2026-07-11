@@ -268,8 +268,10 @@ async function generateContent(topic, category) {
 ${relatedLinks.map(p => `- ${p.title} → https://allyouneedislists.com${p.fullPath}`).join('\n')}`
     : ''
 
+  const isComprehensive = /list of all|all \d+|in (chronological|release|order)|complete list|every .{2,20} (movie|film|album|game|song|season|episode)/i.test(topic)
+
   const system = `You are a senior editor at "All You Need Is Lists", a top-ranked listicle publication. Every article you write:
-- Is 3,000–3,500 words of genuinely useful, expert-level content
+- Is ${isComprehensive ? '4,000–6,000 words of comprehensive, reference-quality content' : '3,000–3,500 words of genuinely useful, expert-level content'}
 - Contains specific real-world details, prices, stats, and named examples — never vague generalisations
 - Uses a direct, confident second-person voice ("you", "your")
 - Is structured for Google featured snippets and rich results
@@ -291,7 +293,27 @@ INTERNAL LINKS (2–3 if related articles are provided):
 - Only link where genuinely relevant to the item being described
 - Do not force links — omit if nothing fits naturally`
 
-  const contentStructure = `Structure the "content" field HTML EXACTLY like this — no exceptions:
+  const contentStructure = isComprehensive
+    ? `Structure the "content" field HTML EXACTLY like this (COMPREHENSIVE REFERENCE format):
+
+1. INTRO — 2-3 sentences explaining what this list covers and why it matters.
+
+2. LIST ENTRIES — list EVERY item that genuinely belongs (no arbitrary cap). For each:
+<h2>N. [Item Title] ([Year])</h2>
+<p class="best-for"><strong>Director/Creator:</strong> [name] &nbsp;|&nbsp; <strong>Runtime:</strong> [length] &nbsp;|&nbsp; <strong>Starring:</strong> [key names]</p>
+<p>[2-3 sentences: what it is, its significance, what makes it stand out]</p>
+
+IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment on its own line:
+<!-- IMAGE: [25-word photorealistic prompt for a scene related to this section] -->
+
+3. CONCLUSION — 2-3 sentences summing up the full series/collection.
+
+4. FAQ SECTION (last element):
+<div class="faq-section"><h2>Frequently Asked Questions</h2>
+<div class="faq-item"><h3>[Question?]</h3><p>[Concise, helpful answer in 2-3 sentences]</p></div>
+[6 to 8 faq-item divs covering the most common reader questions]
+</div>`
+    : `Structure the "content" field HTML EXACTLY like this — no exceptions:
 
 1. QUICK PICKS BOX (very first element):
 <div class="quick-picks"><strong>⚡ Quick Picks</strong><ul>
@@ -302,7 +324,7 @@ INTERNAL LINKS (2–3 if related articles are provided):
 
 2. INTRO — 2-3 engaging sentences explaining why this topic matters right now.
 
-3. LIST ITEMS — 10 to 12 items. For each item:
+3. LIST ITEMS — use however many items the topic genuinely needs (typically 10–12 for "best of" lists, but follow the natural scope of the subject — a topic with 7 clear winners needs 7, not padding to 10). For each item:
 <h2>N. [Item Name]</h2>
 <p class="best-for"><strong>Best for:</strong> [one sentence describing the ideal reader or use case]</p>
 <p>[Paragraph 1 — what it is, why it stands out, specific differentiator]</p>

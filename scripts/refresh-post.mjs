@@ -199,7 +199,7 @@ IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment
 
 2. INTRO — 2-3 engaging sentences.
 
-3. LIST ITEMS — exactly 10 items:
+3. LIST ITEMS — use however many items the topic genuinely needs (typically 10–12 for "best of" lists, but follow the natural scope of the subject — a topic with 7 clear winners needs 7, not forced padding). For each item:
 <h2>N. [Item Name]</h2>
 <p class="best-for"><strong>Best for:</strong> [ideal reader/use case]</p>
 <p>[what it is, why it stands out, specific differentiator]</p>
