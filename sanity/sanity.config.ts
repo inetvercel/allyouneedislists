@@ -5,6 +5,7 @@ import { media } from 'sanity-plugin-media'
 import { codeInput } from '@sanity/code-input'
 import { schemaTypes } from './schemaTypes'
 import { aiStudioPlugin } from './plugins/ai-studio'
+import { bulkImporterPlugin } from './plugins/bulk-importer'
 
 const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
 const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET!
@@ -43,5 +44,6 @@ export default defineConfig({
     aiStudioPlugin(),
     media(),
     codeInput(),
+    bulkImporterPlugin(),
   ],
 })
