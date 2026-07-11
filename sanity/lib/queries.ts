@@ -21,13 +21,13 @@ export const POST_CARD_FIELDS = groq`
 `
 
 export const getLatestPostsQuery = groq`
-  *[_type == "post"] | order(date desc) [$start...$end] {
+  *[_type == "post" && !defined(redirectTo)] | order(date desc) [$start...$end] {
     ${POST_CARD_FIELDS}
   }
 `
 
 export const getLatestPostsCountQuery = groq`
-  count(*[_type == "post"])
+  count(*[_type == "post" && !defined(redirectTo)])
 `
 
 export const getPostByPathQuery = groq`
@@ -76,13 +76,13 @@ export const getCategoryBySlugQuery = groq`
 `
 
 export const getPostsByCategoryQuery = groq`
-  *[_type == "post" && references(*[_type == "category" && slug.current == $slug]._id)] | order(date desc) [$start...$end] {
+  *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current == $slug]._id)] | order(date desc) [$start...$end] {
     ${POST_CARD_FIELDS}
   }
 `
 
 export const getPostsByCategoryCountQuery = groq`
-  count(*[_type == "post" && references(*[_type == "category" && slug.current == $slug]._id)])
+  count(*[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current == $slug]._id)])
 `
 
 export const getTopCategoriesQuery = groq`
@@ -105,6 +105,7 @@ export const getNavCategoriesQuery = groq`
 export const getRelatedPostsQuery = groq`
   *[
     _type == "post"
+    && !defined(redirectTo)
     && _id != $currentId
     && count((categories[]._ref)[@ in $categoryIds]) > 0
   ] | order(date desc) [0...4] {
@@ -152,7 +153,7 @@ export const getSitemapPostsCountQuery = groq`
 `
 
 export const getRssFeedPostsQuery = groq`
-  *[_type == "post"] | order(date desc) [0...50] {
+  *[_type == "post" && !defined(redirectTo)] | order(date desc) [0...50] {
     title,
     fullPath,
     date,
@@ -171,13 +172,13 @@ export const getTagBySlugQuery = groq`
 `
 
 export const getPostsByTagQuery = groq`
-  *[_type == "post" && references(*[_type == "tag" && slug.current == $slug]._id)] | order(date desc) [$start...$end] {
+  *[_type == "post" && !defined(redirectTo) && references(*[_type == "tag" && slug.current == $slug]._id)] | order(date desc) [$start...$end] {
     ${POST_CARD_FIELDS}
   }
 `
 
 export const getPostsByTagCountQuery = groq`
-  count(*[_type == "post" && references(*[_type == "tag" && slug.current == $slug]._id)])
+  count(*[_type == "post" && !defined(redirectTo) && references(*[_type == "tag" && slug.current == $slug]._id)])
 `
 
 export const getAllTagSlugPathsQuery = groq`
@@ -187,18 +188,18 @@ export const getAllTagSlugPathsQuery = groq`
 `
 
 export const searchPostsQuery = groq`
-  *[_type == "post" && (title match $q || excerpt match $q)] | order(date desc) [0...24] {
+  *[_type == "post" && !defined(redirectTo) && (title match $q || excerpt match $q)] | order(date desc) [0...24] {
     ${POST_CARD_FIELDS}
   }
 `
 
 export const getHomepageSectionsQuery = groq`
   {
-    "ai": *[_type == "post" && references(*[_type == "category" && slug.current in ["ai","ai-tools","ai-models","chatgpt","productivity"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "technology": *[_type == "post" && references(*[_type == "category" && slug.current in ["technology","software","hardware","programming","internet"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "business": *[_type == "post" && references(*[_type == "category" && slug.current in ["business","marketing","seo","finance","startups"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "entertainment": *[_type == "post" && references(*[_type == "category" && slug.current in ["entertainment","movies","tv","gaming","music"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "lifestyle": *[_type == "post" && references(*[_type == "category" && slug.current == "lifestyle"]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "travel": *[_type == "post" && references(*[_type == "category" && slug.current == "travel"]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} }
+    "ai": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["ai","ai-tools","ai-models","chatgpt","productivity"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "technology": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["technology","software","hardware","programming","internet"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "business": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["business","marketing","seo","finance","startups"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "entertainment": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["entertainment","movies","tv","gaming","music"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "lifestyle": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current == "lifestyle"]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
+    "travel": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current == "travel"]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} }
   }
 `
