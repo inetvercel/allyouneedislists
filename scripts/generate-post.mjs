@@ -309,6 +309,9 @@ INTERNAL LINKS (2–3 if related articles are provided):
 <p>[Paragraph 2 — features, real specs/prices/data, named examples]</p>
 <p>[Paragraph 3 — practical tips, caveats, comparison context, or who should avoid it]</p>
 
+IMAGE PLACEHOLDERS: After item 4 and after item 8, insert exactly this comment on its own line:
+<!-- IMAGE: [25-word photorealistic prompt for a scene related to items in this section] -->
+
 4. CONCLUSION — 2-3 sentence wrap-up.
 
 5. FAQ SECTION (last element):
@@ -343,6 +346,48 @@ Return ONLY valid JSON — no markdown, no code fences:
   const parsed = JSON.parse(raw)
   parsed.slug = cleanSlug(parsed.slug || parsed.title)
   return parsed
+}
+
+// ─── In-content image injection ───────────────────────────────────────────────
+async function extractAndInjectContentImages(htmlContent, slug) {
+  const placeholderRe = /<!--\s*IMAGE:\s*([^-][^>]*?)\s*-->/gi
+  const matches = []
+  let m
+  while ((m = placeholderRe.exec(htmlContent)) !== null) {
+    matches.push({ full: m[0], prompt: m[1].trim(), index: m.index })
+  }
+  if (matches.length === 0) return htmlContent
+
+  // Cap at 2 in-content images
+  const toGenerate = matches.slice(0, 2)
+  console.log(`  🖼  Generating ${toGenerate.length} in-content image(s)...`)
+
+  let result = htmlContent
+  for (let i = 0; i < toGenerate.length; i++) {
+    const { full, prompt } = toGenerate[i]
+    try {
+      const imgResult = await generateImageAI(prompt)
+      let buf
+      if (imgResult.b64) {
+        buf = Buffer.from(imgResult.b64, 'base64')
+      } else {
+        const res = await fetch(imgResult.url)
+        buf = Buffer.from(await res.arrayBuffer())
+      }
+      const asset = await sanity.assets.upload('image', buf, {
+        filename: `${slug}-section-${i + 1}.png`,
+        contentType: 'image/png',
+      })
+      const src = asset.url
+      const figureHtml = `<figure class="content-image"><img src="${src}" alt="${prompt.slice(0, 80)}" loading="lazy"></figure>`
+      result = result.replace(full, figureHtml)
+      console.log(`     ✅ Section image ${i + 1} uploaded`)
+    } catch (err) {
+      console.warn(`     ⚠️  Section image ${i + 1} failed: ${err.message}`)
+      result = result.replace(full, '')
+    }
+  }
+  return result
 }
 
 // ─── Internal linking ──────────────────────────────────────────────────────────
@@ -452,17 +497,22 @@ async function processOneTopic(topic, category) {
   console.log(`     Slug:  /${content.suggestedCategory}/${content.slug}`)
   console.log(`     Tags:  ${content.tags?.join(', ')}`)
 
-  // 2. Image
+  // 2a. In-content section images (replace placeholders GPT put in the HTML)
+  if (!skipImages) {
+    content.content = await extractAndInjectContentImages(content.content, content.slug)
+  }
+
+  // 2b. Hero image
   let featuredImage = null
   try {
     const imageResult = await getImage(content.title, content.imagePrompt, content.tags || [])
     if (imageResult) {
       featuredImage = await uploadImageToSanity(imageResult, `${content.slug}-hero.png`)
-      if (imageResult.unsplashCredit) console.log(`  ✅ Image ready (credit: ${imageResult.unsplashCredit})`)
-      else console.log(`  ✅ Image ready`)
+      if (imageResult.unsplashCredit) console.log(`  ✅ Hero image ready (credit: ${imageResult.unsplashCredit})`)
+      else console.log(`  ✅ Hero image ready`)
     }
   } catch (err) {
-    console.warn(`  ⚠️  Image failed: ${err.message} — continuing without image`)
+    console.warn(`  ⚠️  Hero image failed: ${err.message} — continuing without image`)
   }
 
   // 3. Categories + tags

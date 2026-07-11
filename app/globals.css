@@ -163,6 +163,22 @@ body {
   overflow: hidden;
 }
 
+/* ── In-content section images ───────────────────────────────────────────────── */
+.post-content-body figure.content-image {
+  margin: 2.5rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+.post-content-body figure.content-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 0;
+  border-radius: 0;
+}
+
 /* ── AI content blocks ──────────────────────────────────────────────────────── */
 
 /* Quick Picks summary box */
