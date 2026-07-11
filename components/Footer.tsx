@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -8,13 +9,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 bg-brand-red rounded flex items-center justify-center font-black text-xs text-white">
-                #
-              </div>
-              <span className="font-black text-lg text-white tracking-tight">
-                All You Need Is <span className="text-brand-red">Lists</span>
-              </span>
+            <Link href="/" className="inline-block mb-4">
+              <Image
+                src="https://cdn.sanity.io/images/1z2ohlkj/production/594d0db86b64611dcd111eff3b1a3d0e895d5c48-906x333.jpg"
+                alt="All You Need Is Lists"
+                width={160}
+                height={59}
+                className="h-9 w-auto object-contain brightness-0 invert opacity-90 hover:opacity-100 transition-opacity"
+              />
             </Link>
             <p className="text-sm leading-relaxed">
               Your go-to destination for the best lists on the internet. Discover top 5s, top 10s, and everything in between.
