@@ -195,11 +195,11 @@ export const searchPostsQuery = groq`
 
 export const getHomepageSectionsQuery = groq`
   {
-    "ai": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["ai","ai-tools","ai-models","chatgpt","productivity"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "technology": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["technology","software","hardware","programming","internet"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "business": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["business","marketing","seo","finance","startups"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "entertainment": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["entertainment","movies","tv","gaming","music"]]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "lifestyle": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current == "lifestyle"]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} },
-    "travel": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current == "travel"]._id)] | order(date desc) [0...3] { ${POST_CARD_FIELDS} }
+    "ai": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["ai","ai-tools","ai-models","chatgpt","productivity"]]._id)] | order(date desc) [0...4] { ${POST_CARD_FIELDS} },
+    "technology": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["technology","software","hardware","programming","internet"]]._id)] | order(date desc) [0...4] { ${POST_CARD_FIELDS} },
+    "business": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["business","marketing","seo","finance","startups"]]._id)] | order(date desc) [0...4] { ${POST_CARD_FIELDS} },
+    "entertainment": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current in ["entertainment","movies","tv","gaming","music"]]._id)] | order(date desc) [0...4] { ${POST_CARD_FIELDS} },
+    "lifestyle": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current == "lifestyle"]._id)] | order(date desc) [0...4] { ${POST_CARD_FIELDS} },
+    "travel": *[_type == "post" && !defined(redirectTo) && references(*[_type == "category" && slug.current == "travel"]._id)] | order(date desc) [0...4] { ${POST_CARD_FIELDS} }
   }
 `
