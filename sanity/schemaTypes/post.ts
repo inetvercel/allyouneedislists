@@ -112,6 +112,20 @@ export const post = defineType({
       description: 'Mark if this post was generated via the AI pipeline.',
     }),
     defineField({
+      name: 'originalTitle',
+      title: 'Original Title (before refresh)',
+      type: 'string',
+      readOnly: true,
+      description: 'The old WP post title this article replaced.',
+    }),
+    defineField({
+      name: 'originalPath',
+      title: 'Original Path (before refresh)',
+      type: 'string',
+      readOnly: true,
+      description: 'The old WP URL path this article replaced.',
+    }),
+    defineField({
       name: 'wpId',
       title: 'WordPress ID',
       type: 'number',

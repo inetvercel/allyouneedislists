@@ -59,7 +59,9 @@ export const getPostByPathQuery = groq`
     },
     updatedAt,
     aiGenerated,
-    redirectTo
+    redirectTo,
+    originalTitle,
+    originalPath
   }
 `
 

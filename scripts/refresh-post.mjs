@@ -287,10 +287,30 @@ async function main() {
     console.log(`  🔗 ${relatedPosts.length} internal link(s) added`)
   }
 
+  // 5b. In-content section images
+  const placeholderRe = /<!--\s*IMAGE:\s*([^-][^>]*?)\s*-->/gi
+  const imgMatches = []; let im
+  while ((im = placeholderRe.exec(content.content)) !== null) imgMatches.push({ full: im[0], prompt: im[1].trim() })
+  for (const { full, prompt } of imgMatches.slice(0, 2)) {
+    try {
+      const r = await generateAIImage(prompt)
+      let buf = r.b64 ? Buffer.from(r.b64, 'base64') : Buffer.from(await (await fetch(r.url)).arrayBuffer())
+      const asset = await sanity.assets.upload('image', buf, { filename: `${content.slug}-sec.png`, contentType: 'image/png' })
+      content.content = content.content.replace(full, `<figure class="content-image"><img src="${asset.url}" alt="${prompt.slice(0,80)}" loading="lazy"></figure>`)
+      console.log(`  ✅ Section image uploaded`)
+    } catch (e) {
+      content.content = content.content.replace(full, '')
+    }
+  }
+
   // 6. Publish new post to Sanity
   const now = new Date().toISOString()
   const newFullPath = `/${categoryArg}/${content.slug}`
   const newDocId = `ai-refresh-${Date.now()}`
+
+  // Collect original titles/paths for the history banner
+  const originalTitle = oldPosts[0]?.title || ''
+  const originalPath  = oldPosts[0]?.fullPath || ''
 
   const newPost = await sanity.createOrReplace({
     _id: newDocId,
@@ -305,6 +325,8 @@ async function main() {
     seoDescription: content.seoDescription,
     content: content.content,
     aiGenerated: true,
+    ...(originalTitle && { originalTitle }),
+    ...(originalPath  && { originalPath }),
     ...(featuredImage && { featuredImage }),
     ...(categoryRefs.length > 0 && { categories: categoryRefs }),
     ...(tagRefs.length > 0 && { tags: tagRefs }),

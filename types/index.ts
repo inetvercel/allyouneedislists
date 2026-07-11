@@ -44,6 +44,8 @@ export interface PostFull extends PostCard {
   updatedAt?: string
   aiGenerated?: boolean
   redirectTo?: string
+  originalTitle?: string
+  originalPath?: string
 }
 
 export interface Category {

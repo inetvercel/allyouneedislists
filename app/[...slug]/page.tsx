@@ -324,6 +324,20 @@ export default async function SlugPage({
           ))}
         </nav>
 
+        {/* Refreshed-from banner */}
+        {post.originalPath && (
+          <div className="flex items-center gap-2 mb-4 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
+            <span className="text-base">🔄</span>
+            <span>
+              Updated from <span className="font-semibold">&ldquo;{post.originalTitle || post.originalPath}&rdquo;</span>
+              {' '}—{' '}
+              <Link href="/history" className="underline underline-offset-2 hover:text-amber-900">
+                view all updates
+              </Link>
+            </span>
+          </div>
+        )}
+
         {/* Categories */}
         {post.categories && post.categories.length > 0 && (
           <div className="flex items-center gap-2 mb-4 flex-wrap">
