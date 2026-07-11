@@ -132,7 +132,7 @@ async function generateAIImage(prompt) {
   const fullPrompt = `${prompt}. Editorial photography style, 16:9 composition, cinematic lighting, high quality, no text, no watermarks.`
   for (const model of ['gpt-image-2', 'gpt-image-1']) {
     try {
-      const response = await openai.images.generate({ model, prompt: fullPrompt, size: '1792x1024', quality: 'medium', n: 1 })
+      const response = await openai.images.generate({ model, prompt: fullPrompt, size: '1536x1024', quality: 'medium', n: 1 })
       const d = response.data[0]
       return d.b64_json ? { b64: d.b64_json } : { url: d.url }
     } catch (err) {
@@ -157,11 +157,38 @@ function buildRelatedHTML(posts) {
   return `\n<div class="related-lists"><h3>📋 Related Lists You'll Love</h3><ul>${items}</ul></div>`
 }
 
+// Detect "list of all / in order / chronological" style topics
+function isComprehensiveList(topic) {
+  return /list of all|all \d+|in (chronological|release|order|release order)|complete list|every .{2,20} (movie|film|album|game|song|season|episode)/i.test(topic)
+}
+
 // ─── Main content generation ───────────────────────────────────────────────────
 async function generateContent(topicTitle, category) {
   console.log(`  📝 GPT generating full content...`)
 
-  const contentStructure = `Structure the "content" field HTML EXACTLY like this:
+  const comprehensive = isComprehensiveList(topicTitle)
+
+  const contentStructure = comprehensive
+    ? `Structure the "content" field HTML EXACTLY like this (COMPREHENSIVE REFERENCE format):
+
+1. INTRO — 2-3 sentences explaining what this list covers and why it matters.
+
+2. LIST ENTRIES — list EVERY item (no maximum, as many as actually exist). For each:
+<h2>N. [Item Title] ([Year])</h2>
+<p class="best-for"><strong>Director/Creator:</strong> [name] &nbsp;|&nbsp; <strong>Runtime:</strong> [length] &nbsp;|&nbsp; <strong>Starring:</strong> [key names]</p>
+<p>[2-3 sentences: plot summary, significance, what makes it stand out in the series]</p>
+
+IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment on its own line:
+<!-- IMAGE: [25-word photorealistic prompt for a scene related to this section] -->
+
+3. CONCLUSION — 2-3 sentences summing up the full series/collection.
+
+4. FAQ:
+<div class="faq-section"><h2>Frequently Asked Questions</h2>
+<div class="faq-item"><h3>[Question?]</h3><p>[Answer in 2-3 sentences]</p></div>
+[6-8 faq-items]
+</div>`
+    : `Structure the "content" field HTML EXACTLY like this:
 
 1. QUICK PICKS BOX (very first element):
 <div class="quick-picks"><strong>⚡ Quick Picks</strong><ul>
@@ -179,6 +206,9 @@ async function generateContent(topicTitle, category) {
 <p>[features, real data, named examples]</p>
 <p>[tips, caveats, comparison context]</p>
 
+IMAGE PLACEHOLDERS: After item 4 and after item 8, insert exactly this comment on its own line:
+<!-- IMAGE: [25-word photorealistic prompt for a scene related to items in this section] -->
+
 4. CONCLUSION — 2-3 sentences.
 
 5. FAQ:
@@ -190,7 +220,7 @@ async function generateContent(topicTitle, category) {
   const messages = [
     {
       role: 'system',
-      content: `You are a senior editor at "All You Need Is Lists". Write 3,000–3,500 word listicles with specific real-world details, prices, stats, and named examples. Direct, confident second-person voice. Demonstrates E-E-A-T.
+      content: `You are a senior editor at "All You Need Is Lists". Write ${comprehensive ? '4,000–6,000 word comprehensive reference articles' : '3,000–3,500 word listicles'} with specific real-world details, prices, stats, and named examples. Direct, confident second-person voice. Demonstrates E-E-A-T.
 
 LINKING RULES:
 - Internal links: <a href="/path">text</a> — no target or rel

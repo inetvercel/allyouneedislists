@@ -75,6 +75,39 @@ const EXTRA_DELETE_PATTERNS = [
 // Categories / path prefixes that are outdated / not worth refreshing
 const SKIP_CATEGORIES = ['wallpaper-galleries', '2009', '2010', '2011', '2012', '2013', 'product']
 
+// Priority scoring — higher score = picked first when using --limit
+const HIGH_VALUE_PATS = [
+  /movies? in order/i, /all .{2,30} movies/i, /list of all/i,
+  /best (tv|comedy|drama|crime|sitcom)/i,
+  /best (laptop|phone|headphone|speaker|camera|tablet|monitor|keyboard|router|vpn)/i,
+  /photoshop alternative/i, /web hosting/i,
+  /fast food|burger|pizza|restaurant/i,
+  /travel|hotel|destination|city|country|beach|island|holiday/i,
+  /best (workout|exercise|diet|fitness|gym)/i,
+  /best (investment|stock|crypto|savings|credit card)/i,
+  /james bond|marvel|star wars|harry potter|star trek|fast and furious|disney/i,
+  /best (songs?|albums?|artists?|bands?)/i,
+  /greatest (of all time|ever|in history)/i,
+  /presidents of the united states/i,
+]
+const LOW_VALUE_PATS = [
+  /wordpress (theme|plugin|tip)/i, /seo tip/i, /halloween costume/i,
+  /lolcat/i, /twitter (badge|widget)/i, /usenet|newsgroup/i,
+  /mashup video/i, /april 20\d\d movie trailer/i, /oscars? prediction/i,
+  /duckbill jones/i, /blue.eyed soul/i,
+]
+const CAT_PRIORITY = { entertainment:30, technology:20, lifestyle:20, health:30, finance:30, gaming:20, 'world-business':10, design:0, education:20, sports:20 }
+
+function priorityScore(post) {
+  const title = post.title || ''
+  const seg   = (post.fullPath || '').split('/').filter(Boolean)[0] || ''
+  let s = CAT_PRIORITY[seg] ?? 10
+  if (HIGH_VALUE_PATS.some(r => r.test(title))) s += 40
+  if (LOW_VALUE_PATS.some(r => r.test(title)))  s -= 30
+  s += Math.min(Math.round((post.chars || 0) / 5), 2000) / 100
+  return s
+}
+
 function shouldSkip(post) {
   const title = post.title || ''
   const path  = post.fullPath || ''
@@ -155,6 +188,9 @@ async function main() {
     seenTitles.add(normTitle)
     queue.push(post)
   }
+
+  // Sort by priority so --limit picks the most valuable posts first
+  queue.sort((a, b) => priorityScore(b) - priorityScore(a))
 
   const toRun = queue.slice(0, limitArg)
 
