@@ -43,6 +43,7 @@ export interface PostFull extends PostCard {
   tags?: TagRef[]
   updatedAt?: string
   aiGenerated?: boolean
+  redirectTo?: string
 }
 
 export interface Category {

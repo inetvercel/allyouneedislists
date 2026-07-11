@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Calendar, Tag, ChevronRight } from 'lucide-react'
@@ -145,6 +145,11 @@ export default async function SlugPage({
 
   // 1. Try post
   const post = await client.fetch<PostFull | null>(getPostByPathQuery, { path: fullPath }).catch(() => null)
+
+  // 301 redirect stub
+  if (post?.redirectTo) {
+    redirect(post.redirectTo)
+  }
 
   if (post) {
     const cleanedContent = cleanWordPressHtml(post.content || '')

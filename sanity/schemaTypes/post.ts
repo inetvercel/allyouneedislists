@@ -99,6 +99,12 @@ export const post = defineType({
       type: 'datetime',
     }),
     defineField({
+      name: 'redirectTo',
+      title: 'Redirect To',
+      description: 'If set, this post is a redirect stub. Visitors will be sent here with a 301.',
+      type: 'string',
+    }),
+    defineField({
       name: 'aiGenerated',
       title: 'AI Generated',
       type: 'boolean',
