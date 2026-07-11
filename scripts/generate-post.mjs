@@ -268,7 +268,7 @@ async function generateContent(topic, category) {
 ${relatedLinks.map(p => `- ${p.title} → https://allyouneedislists.com${p.fullPath}`).join('\n')}`
     : ''
 
-  const isComprehensive = /list of all|all \d+|in (chronological|release|order)|complete list|every .{2,20} (movie|film|album|game|song|season|episode)/i.test(topic)
+  const isComprehensive = /^list of all|all \d+ .{2,30} (movies|films|albums|games|songs|seasons|episodes)|in (chronological|release) order|complete list of/i.test(topic)
 
   const system = `You are a senior editor at "All You Need Is Lists", a top-ranked listicle publication. Every article you write:
 - Is ${isComprehensive ? '4,000–6,000 words of comprehensive, reference-quality content' : '3,000–3,500 words of genuinely useful, expert-level content'}

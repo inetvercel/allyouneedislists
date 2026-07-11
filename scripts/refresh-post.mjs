@@ -159,7 +159,7 @@ function buildRelatedHTML(posts) {
 
 // Detect "list of all / in order / chronological" style topics
 function isComprehensiveList(topic) {
-  return /list of all|all \d+|in (chronological|release|order|release order)|complete list|every .{2,20} (movie|film|album|game|song|season|episode)/i.test(topic)
+  return /^list of all|all \d+ .{2,30} (movies|films|albums|games|songs|seasons|episodes)|in (chronological|release) order|complete list of/i.test(topic)
 }
 
 // ─── Main content generation ───────────────────────────────────────────────────
