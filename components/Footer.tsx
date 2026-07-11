@@ -15,7 +15,7 @@ export default function Footer() {
                 alt="All You Need Is Lists"
                 width={160}
                 height={59}
-                className="h-9 w-auto object-contain brightness-0 invert opacity-90 hover:opacity-100 transition-opacity"
+                className="h-10 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
               />
             </Link>
             <p className="text-sm leading-relaxed">

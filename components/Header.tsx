@@ -95,21 +95,21 @@ export default function Header() {
     href === '/' ? pathname === '/' : pathname?.startsWith(href) ?? false
 
   return (
-    <header className="bg-[#0c0c0c] sticky top-0 z-50 shadow-[0_1px_0_rgba(255,255,255,0.06)]">
+    <header className="bg-[#0c0c0c]/95 sticky top-0 z-50 backdrop-blur-md shadow-[0_1px_0_rgba(255,255,255,0.07)]">
       {/* Red accent bar */}
       <div className="h-[3px] bg-gradient-to-r from-brand-red via-red-500 to-red-700" />
 
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
-        <div className="flex items-center h-[68px] gap-8">
+        <div className="flex items-center h-[72px] gap-8">
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center">
             <Image
               src="https://cdn.sanity.io/images/1z2ohlkj/production/594d0db86b64611dcd111eff3b1a3d0e895d5c48-906x333.jpg"
               alt="All You Need Is Lists"
-              width={180}
-              height={66}
-              className="h-10 w-auto object-contain brightness-0 invert"
+              width={200}
+              height={74}
+              className="h-11 w-auto object-contain"
               priority
             />
           </Link>
