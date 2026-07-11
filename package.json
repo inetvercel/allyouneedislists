@@ -21,6 +21,7 @@
     "openai": "^4.104.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-is": "^19.2.7",
     "sanity": "^3.62.2",
     "sanity-plugin-media": "^2.4.2",
     "styled-components": "^6.1.13"
