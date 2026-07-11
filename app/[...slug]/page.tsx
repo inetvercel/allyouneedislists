@@ -191,7 +191,12 @@ export default async function SlugPage({
   }
 
   if (post) {
-    const cleanedContent = cleanWordPressHtml(post.content || '')
+    let cleanedContent = cleanWordPressHtml(post.content || '')
+    // Wrap list-item numbers in h2 headings with a styled circle span
+    cleanedContent = cleanedContent.replace(
+      /<h2>(\d{1,2})\.[\s\u00A0]*/g,
+      '<h2 class="numbered-h2"><span class="list-num">$1</span>'
+    )
     const categoryIds = post.categories?.map((c) => c._id) || []
     const relatedPosts = categoryIds.length
       ? await client.fetch(getRelatedPostsQuery, { currentId: post._id, categoryIds }).catch(() => [])
@@ -303,14 +308,15 @@ export default async function SlugPage({
               </span>
             </>
           )}
-          {post.aiGenerated && (
-            <>
-              <span className="text-gray-200">·</span>
-              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                AI-assisted
-              </span>
-            </>
-          )}
+          <>
+            <span className="text-gray-200">·</span>
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-1 bg-[#E63946] text-white text-xs font-bold px-2.5 py-1 rounded-full hover:bg-[#c1121f] transition-colors"
+            >
+              Get Listed
+            </Link>
+          </>
         </div>
 
         {/* Featured Image */}
