@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { ChevronDown, Menu, X, Search } from 'lucide-react'
 
@@ -85,13 +86,15 @@ export default function Header() {
         <div className="flex items-center h-[60px] gap-6">
 
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 flex items-center gap-2.5 group">
-            <div className="w-8 h-8 bg-brand-red rounded-lg flex items-center justify-center font-black text-white text-base shadow-lg shadow-red-900/40 group-hover:shadow-red-600/50 transition-shadow">
-              #
-            </div>
-            <span className="font-black text-[15px] text-white tracking-tight leading-none hidden sm:block">
-              All You Need Is <span className="text-brand-red">Lists</span>
-            </span>
+          <Link href="/" className="flex-shrink-0 flex items-center group">
+            <Image
+              src="https://cdn.sanity.io/images/1z2ohlkj/production/b369cbd326864947b294e4298083fdde378e27a3-876x588.png"
+              alt="All You Need Is Lists"
+              width={132}
+              height={89}
+              className="h-9 w-auto object-contain"
+              priority
+            />
           </Link>
 
           {/* Desktop Nav */}
