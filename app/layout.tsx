@@ -19,6 +19,9 @@ export const metadata: Metadata = {
       'application/rss+xml': 'https://allyouneedislists.com/feed.xml',
     },
   },
+  verification: {
+    google: 'PASTE_YOUR_CODE_HERE',
+  },
 }
 
 export const viewport: Viewport = {

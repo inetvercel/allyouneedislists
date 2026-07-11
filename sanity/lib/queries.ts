@@ -123,14 +123,30 @@ export const getAllCategorySlugPathsQuery = groq`
 `
 
 export const getSitemapPostsQuery = groq`
-  *[_type == "post" && defined(fullPath)] | order(date desc) [$start...$end] {
+  *[
+    _type == "post"
+    && defined(fullPath)
+    && !defined(redirectTo)
+    && !(fullPath match "*attachment*")
+    && !(fullPath match "*/[0-9]")
+    && !(fullPath match "*/[0-9][0-9]")
+    && !(fullPath match "*/[0-9][0-9][0-9]")
+  ] | order(date desc) [$start...$end] {
     fullPath,
     date
   }
 `
 
 export const getSitemapPostsCountQuery = groq`
-  count(*[_type == "post" && defined(fullPath)])
+  count(*[
+    _type == "post"
+    && defined(fullPath)
+    && !defined(redirectTo)
+    && !(fullPath match "*attachment*")
+    && !(fullPath match "*/[0-9]")
+    && !(fullPath match "*/[0-9][0-9]")
+    && !(fullPath match "*/[0-9][0-9][0-9]")
+  ])
 `
 
 export const getRssFeedPostsQuery = groq`
