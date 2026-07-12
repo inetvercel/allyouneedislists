@@ -72,12 +72,17 @@ const sanity = createClient({ projectId: PROJECT_ID, dataset: DATASET, token: TO
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const STOP_WORDS = new Set([
-  'the','a','an','and','or','in','on','at','to','for','of','by','with','from','into','about','over','under','between','through','during','before','after','above','below',
-  'is','are','was','were','how','what','why','when','where','who','will','can','you','your','we','our','its','i','do','be','has','have','had','get','make','need','use','just','let',
-  'worth','using','without','every','all','most','more','top','best','great','new','next','last','now','here','these','those','some','any','each',
+  'the','a','an','and','or','by','with','from','is','are','was','were',
+  'will','can','you','your','we','our','its','i','do','be','has','have','had',
+  'that','this','these','those','which','who','what','when','where','how','why',
+  'just','also','very','really','actually','ever','never','still','already',
+  'worth','without','every','each','some','any',
 ])
 function cleanSlug(raw) {
-  return raw.toLowerCase().replace(/\b20\d{2}\b/g,'').replace(/[^a-z0-9\s-]/g,'')
+  return raw.toLowerCase()
+    .replace(/\b20\d{2}\b/g, '')       // strip years
+    .replace(/^\d+[\s-]*/g, '')        // strip leading list numbers: "5 Ways" → "Ways"
+    .replace(/[^a-z0-9\s-]/g, '')
     .split(/[\s-]+/).filter(w => w && !STOP_WORDS.has(w)).slice(0,6).join('-')
 }
 
@@ -161,7 +166,7 @@ CRITICAL TITLE RULE: Never include a specific number in the title unless your co
 Return ONLY valid JSON — no markdown, no code fences:
 {
   "title": "Polished title under 65 chars that accurately reflects the content",
-  "slug": "3-5 word slug, no stop words, no year",
+  "slug": "3-6 word slug using the core search phrase. No list numbers, no year. Keep action words. BAD: 'friends-adult-ways' GOOD: 'make-friends-adult'",
   "excerpt": "Compelling 150-160 character summary",
   "seoTitle": "SEO title under 60 chars",
   "seoDescription": "Meta description 145-155 chars with call to action",
@@ -178,7 +183,7 @@ CRITICAL TITLE RULE: Never include a specific number in the title unless your co
 Return ONLY valid JSON — no markdown, no code fences:
 {
   "title": "Punchy, benefit-driven title under 65 chars",
-  "slug": "3-5 word slug, no stop words, no year",
+  "slug": "3-6 word slug using the core search phrase. No list numbers, no year. Keep action words. BAD: 'friends-adult-ways' GOOD: 'make-friends-adult'",
   "excerpt": "Compelling 150-160 character summary",
   "seoTitle": "SEO title under 60 chars",
   "seoDescription": "Meta description 145-155 chars with call to action",

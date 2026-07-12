@@ -104,20 +104,24 @@ const sanity = createClient({
 })
 
 // ─── Slug cleaner ─────────────────────────────────────────────────────────────
+// Only strip words that are truly meaningless in a URL — keep action words (make, build, use)
 const STOP_WORDS = new Set([
-  'the','a','an','and','or','in','on','at','to','for','of','by','with','from','into','about','over','under','between','through','during','before','after','above','below',
-  'is','are','was','were','how','what','why','when','where','who','will','can','you','your','we','our','its','i','do','be','has','have','had','get','make','need','use','just','let',
-  'worth','using','without','every','all','most','more','top','best','great','new','next','last','now','here','these','those','some','any','each',
+  'the','a','an','and','or','by','with','from','is','are','was','were',
+  'will','can','you','your','we','our','its','i','do','be','has','have','had',
+  'that','this','these','those','which','who','what','when','where','how','why',
+  'just','also','very','really','actually','ever','never','still','already',
+  'worth','without','every','each','some','any',
 ])
 
 function cleanSlug(raw) {
   return raw
     .toLowerCase()
-    .replace(/\b20\d{2}\b/g, '')       // remove years e.g. 2024 2025 2026
-    .replace(/[^a-z0-9\s-]/g, '')      // only letters, numbers, hyphens, spaces
-    .split(/[\s-]+/)                   // split on hyphens and spaces
-    .filter(w => w && !STOP_WORDS.has(w))  // remove stop words and empty strings
-    .slice(0, 6)                       // max 6 segments
+    .replace(/\b20\d{2}\b/g, '')        // strip years: 2024, 2025, 2026
+    .replace(/^\d+[\s-]*/g, '')         // strip leading list numbers: "5 Ways" → "Ways"
+    .replace(/[^a-z0-9\s-]/g, '')       // only letters, numbers, hyphens, spaces
+    .split(/[\s-]+/)                    // split on hyphens and spaces
+    .filter(w => w && !STOP_WORDS.has(w)) // remove stop words and empty strings
+    .slice(0, 6)                        // max 6 segments
     .join('-')
 }
 
@@ -537,7 +541,7 @@ CRITICAL TITLE RULE: Never include a specific number in the title (e.g. "All 44"
 Return ONLY valid JSON — no markdown, no code fences:
 {
   "title": "Accurate title under 65 chars — must not promise a count the content doesn't deliver",
-  "slug": "3-5 word slug — no year, no stop words (the/a/an/for/in/of/to/by). Example: best-budget-laptops-students",
+  "slug": "3-6 word slug using the core search phrase people actually type. RULES: (1) no list numbers (5, 10, etc) — use 'best-password-managers' not '10-best-password-managers'; (2) keep action words that define the topic: 'make-friends-adult', 'build-emergency-fund', 'start-podcast-beginners'; (3) no year. BAD: 'friends-adult-ways' GOOD: 'make-friends-adult'",
   "excerpt": "Compelling 150-160 character summary that creates urgency to click",
   "seoTitle": "SEO title under 60 characters with primary keyword near the start",
   "seoDescription": "145-155 character meta description with natural keyword use and a call to action",
