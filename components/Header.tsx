@@ -104,14 +104,16 @@ export default function Header() {
 
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center">
-            <Image
-              src="https://cdn.sanity.io/images/1z2ohlkj/production/594d0db86b64611dcd111eff3b1a3d0e895d5c48-906x333.jpg"
-              alt="All You Need Is Lists"
-              width={200}
-              height={74}
-              className="h-11 w-auto object-contain"
-              priority
-            />
+            <span className="flex items-center bg-white rounded-lg px-2.5 py-1.5 shadow-sm">
+              <Image
+                src="https://cdn.sanity.io/images/1z2ohlkj/production/fac14359f6d086b9c7df3f474e9aa22b09f53719-1585x527.png"
+                alt="All You Need Is Lists"
+                width={210}
+                height={70}
+                className="h-9 w-auto object-contain"
+                priority
+              />
+            </span>
           </Link>
 
           {/* Divider */}
