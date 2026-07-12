@@ -52,6 +52,7 @@ function makeRow(overrides: Partial<Row> = {}): Row {
 export function BulkImporterTool() {
   const [rows, setRows] = useState<Row[]>([makeRow()])
   const [model, setModel] = useState('gpt')
+  const [imageMode, setImageMode] = useState('auto')
   const [pasteMode, setPasteMode] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [pasteError, setPasteError] = useState('')
@@ -184,6 +185,7 @@ export function BulkImporterTool() {
             rawContent: row.rawContent,
             links: linkArr,
             model,
+            imageMode,
           }),
         })
 
@@ -281,6 +283,15 @@ export function BulkImporterTool() {
             <Select value={model} onChange={(e: FormEvent<HTMLSelectElement>) => setModel((e.currentTarget as HTMLSelectElement).value)}>
               <option value="gpt">GPT-4o (fast, no search)</option>
               <option value="grok">Grok + Web Search 🔍 (real-time)</option>
+            </Select>
+          </Stack>
+          <Stack space={1} style={{ minWidth: 200 }}>
+            <Text size={1} weight="semibold">Images</Text>
+            <Select value={imageMode} onChange={(e: FormEvent<HTMLSelectElement>) => setImageMode((e.currentTarget as HTMLSelectElement).value)}>
+              <option value="auto">Auto (best available)</option>
+              <option value="web">Real Web Photo 📸 (movies, news)</option>
+              <option value="ai">AI Generated</option>
+              <option value="none">No images</option>
             </Select>
           </Stack>
           {model === 'grok' && (

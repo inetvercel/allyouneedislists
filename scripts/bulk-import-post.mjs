@@ -39,9 +39,11 @@ if (!inputFile || !existsSync(inputFile)) {
 }
 
 const input = JSON.parse(readFileSync(inputFile, 'utf-8'))
-const { title, category = '', rawContent = '', links = [], useGrok: inputUseGrok = false } = input
+const { title, category = '', rawContent = '', links = [], useGrok: inputUseGrok = false, imageMode: inputImageMode = 'auto' } = input
 const useGrok = args.includes('--grok') || inputUseGrok
 const grokModel = args.find(a => a.startsWith('--grok-model='))?.split('=')[1] || process.env.GROK_MODEL || 'grok-4'
+const imageSource = args.find(a => a.startsWith('--image='))?.split('=')[1] || inputImageMode || 'auto'
+const skipImages = imageSource === 'none'
 
 // Clean up temp file
 try { unlinkSync(inputFile) } catch {}
@@ -220,6 +222,23 @@ ${HTML_STRUCTURE}`,
 }
 
 // ─── Grok image finder (real web photo via search) ───────────────────────────
+const TRUSTED_IMAGE_PATTERNS = [
+  /https:\/\/images\.unsplash\.com\/photo-[^\s"')>]+/,
+  /https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[^\s"')>]+\.(jpg|jpeg|png|webp)/i,
+  /https:\/\/images\.pexels\.com\/photos\/[^\s"')>]+/,
+  /https:\/\/live\.staticflickr\.com\/[^\s"')>]+\.(jpg|jpeg|png)/i,
+  /https:\/\/cdn\.pixabay\.com\/photo\/[^\s"')>]+\.(jpg|jpeg|png)/i,
+]
+
+async function verifyImageUrl(url) {
+  try {
+    const res = await fetch(url, { headers: { Range: 'bytes=0-1023' } })
+    if (!res.ok && res.status !== 206) return false
+    const ct = res.headers.get('content-type') || ''
+    return ct.startsWith('image/')
+  } catch { return false }
+}
+
 async function findImageWithGrokSearch(postTitle, imagePrompt) {
   console.log(`  🔍 Grok searching for a real high-res photo...`)
   try {
@@ -228,27 +247,34 @@ async function findImageWithGrokSearch(postTitle, imagePrompt) {
       input: [
         {
           role: 'system',
-          content: 'You are an image search assistant. Use web_search to find freely usable high-resolution photos. Return only JSON.',
+          content: `You are an image URL finder. Search the web and return ONLY a raw JSON object — no explanation, no markdown, no prose.\nPreferred sources: Unsplash (images.unsplash.com), Wikimedia Commons (upload.wikimedia.org), Pexels (images.pexels.com).\nThe imageUrl must be a direct CDN link to the image file itself, not a web page.`,
         },
         {
           role: 'user',
-          content: `Search the web for the best freely usable high-resolution photograph for an article titled: "${postTitle}"\nVisual description: ${imagePrompt}\n\nSearch these sites (in order):\n1. Unsplash.com — get the direct CDN URL: https://images.unsplash.com/photo-...\n2. Pexels.com — get the direct photo CDN URL\n3. Wikimedia Commons — for factual/historical topics\n\nRequirements: landscape orientation, 1920x1080 minimum, freely usable (CC0), no watermarks, directly downloadable URL.\n\nReturn ONLY this JSON (nothing else):\n{"imageUrl": "https://...", "credit": "Photo by Name on Site"}`,
+          content: `Find the best freely usable, high-resolution photograph for: "${postTitle}"\nVisual context: ${imagePrompt}\n\nFor movies/TV/entertainment: find official promo art or a Wikimedia Commons image.\nFor other topics: search Unsplash or Pexels for a landscape photo.\n\nOutput ONLY this JSON — nothing before or after:\n{"imageUrl":"DIRECT_IMAGE_CDN_URL","credit":"Photo by X on Site"}`,
         },
       ],
       tools: [{ type: 'web_search' }],
     })
 
-    const content = extractGrokText(response)
-    const match = content.match(/\{"imageUrl"[^}]+\}/)
-    if (!match) throw new Error('No imageUrl in Grok response')
+    const raw = extractGrokText(response)
 
-    const { imageUrl, credit } = JSON.parse(match[0])
-    if (!imageUrl || !imageUrl.startsWith('http')) throw new Error('Invalid URL')
+    let imageUrl = '', credit = ''
+    const jsonMatch = raw.match(/\{[^{}]*"imageUrl"\s*:\s*"(https?:[^"]+)"[^{}]*\}/)
+    if (jsonMatch) {
+      try { const p = JSON.parse(jsonMatch[0]); imageUrl = p.imageUrl || ''; credit = p.credit || '' }
+      catch { imageUrl = jsonMatch[1] }
+    }
+    if (!imageUrl) {
+      for (const pattern of TRUSTED_IMAGE_PATTERNS) {
+        const m = raw.match(pattern)
+        if (m) { imageUrl = m[0].replace(/[",)>]+$/, ''); break }
+      }
+    }
+    if (!imageUrl) throw new Error('No image URL found in response')
 
-    const probe = await fetch(imageUrl, { method: 'HEAD' }).catch(() => null)
-    if (!probe?.ok) throw new Error(`Not reachable (${probe?.status ?? 'network error'})`)
-    const ct = probe.headers.get('content-type') || ''
-    if (!ct.startsWith('image/')) throw new Error(`Not an image (${ct})`)
+    const ok = await verifyImageUrl(imageUrl)
+    if (!ok) throw new Error(`URL did not return image content: ${imageUrl.slice(0, 80)}`)
 
     console.log(`  ✅ Real photo found: ${credit || imageUrl.slice(0, 80)}`)
     return { url: imageUrl, credit }
@@ -260,13 +286,26 @@ async function findImageWithGrokSearch(postTitle, imagePrompt) {
 
 // ─── Image generation ─────────────────────────────────────────────────────────
 async function getHeroImage(imagePrompt, postTitle) {
-  // When using Grok, first try to find a real web photo
-  if (useGrok) {
-    const found = await findImageWithGrokSearch(postTitle, imagePrompt)
-    if (found) return found
+  if (skipImages) return null
+
+  // --image=web  OR  Grok auto → try real web photo first
+  if (imageSource === 'web' || (useGrok && imageSource === 'auto')) {
+    if (grokClient) {
+      const found = await findImageWithGrokSearch(postTitle, imagePrompt)
+      if (found) return found
+      if (imageSource === 'web') {
+        if (UNSPLASH_KEY) { /* fall through to Unsplash below */ }
+        else return null
+      }
+    }
   }
 
-  if (IDEOGRAM_KEY) {
+  if (imageSource === 'ai') {
+    console.log(`  🤖 OpenAI generating image...`)
+    // fall through to OpenAI generation at the bottom
+  }
+
+  if (IDEOGRAM_KEY && imageSource !== 'ai') {
     console.log(`  🎨 Ideogram generating thumbnail...`)
     const prompt = `"${postTitle}" — bold clean typography over a ${imagePrompt}. Professional editorial thumbnail, dark background with vibrant accent colours, magazine quality, 16:9 web banner.`
     const res = await fetch('https://api.ideogram.ai/generate', {

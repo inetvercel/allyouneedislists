@@ -45,6 +45,7 @@ export function AIStudioTool() {
   const [category, setCategory] = useState('')
   const [count, setCount] = useState('25')
   const [model, setModel] = useState('gpt')
+  const [imageMode, setImageMode] = useState('auto')
   const [topics, setTopics] = useState<TopicRow[]>([])
   const [loading, setLoading] = useState(false)
   const [runningId, setRunningId] = useState<string | null>(null)
@@ -99,7 +100,7 @@ export function AIStudioTool() {
         const res = await fetch('/api/generate-post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic: topic.title, category: topic.category, model }),
+          body: JSON.stringify({ topic: topic.title, category: topic.category, model, imageMode }),
         })
 
         if (!res.body) throw new Error('No stream body')
@@ -177,6 +178,15 @@ export function AIStudioTool() {
                 <Select value={model} onChange={(e: FormEvent<HTMLSelectElement>) => setModel((e.currentTarget as HTMLSelectElement).value)}>
                   <option value="gpt">GPT-5.5 (fast)</option>
                   <option value="grok">Grok + Web Search 🔍</option>
+                </Select>
+              </Stack>
+              <Stack space={2}>
+                <Text size={1} weight="semibold">Images</Text>
+                <Select value={imageMode} onChange={(e: FormEvent<HTMLSelectElement>) => setImageMode((e.currentTarget as HTMLSelectElement).value)}>
+                  <option value="auto">Auto (best available)</option>
+                  <option value="web">Real Web Photo 📸 (movies, news)</option>
+                  <option value="ai">AI Generated</option>
+                  <option value="none">No images</option>
                 </Select>
               </Stack>
               <Stack space={2}>

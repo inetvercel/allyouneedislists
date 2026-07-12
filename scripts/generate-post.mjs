@@ -64,6 +64,7 @@ Options:
   --draft              Save as Sanity draft instead of publishing immediately
   --skip-images        Skip all image generation
   --image=ideogram     Use Ideogram v2 (text-in-image, $0.08, needs IDEOGRAM_API_KEY)
+  --image=web          Grok web search for real photo (Unsplash/Pexels/Wikimedia) — needs GROK_API_KEY
   --image=unsplash     Use Unsplash real photos (free, needs UNSPLASH_ACCESS_KEY)
   --image=ai           Use OpenAI gpt-image-1 (needs OPENAI_API_KEY)
   --image=auto         Best available source: ideogram > unsplash > ai (default)
@@ -252,6 +253,27 @@ async function generateImageAI(visualPrompt) {
 }
 
 // ─── Grok image finder (real web photo via search) ───────────────────────────
+// Trusted image CDN patterns — direct downloadable, freely usable
+const TRUSTED_IMAGE_PATTERNS = [
+  /https:\/\/images\.unsplash\.com\/photo-[^\s"')>]+/,
+  /https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/[^\s"')>]+\.(jpg|jpeg|png|webp)/i,
+  /https:\/\/images\.pexels\.com\/photos\/[^\s"')>]+/,
+  /https:\/\/live\.staticflickr\.com\/[^\s"')>]+\.(jpg|jpeg|png)/i,
+  /https:\/\/cdn\.pixabay\.com\/photo\/[^\s"')>]+\.(jpg|jpeg|png)/i,
+]
+
+async function verifyImageUrl(url) {
+  // Follow redirects — some CDNs redirect; fetch a small range to confirm image
+  try {
+    const res = await fetch(url, { headers: { Range: 'bytes=0-1023' } })
+    if (!res.ok && res.status !== 206) return false
+    const ct = res.headers.get('content-type') || ''
+    return ct.startsWith('image/')
+  } catch {
+    return false
+  }
+}
+
 async function findImageWithGrokSearch(title, imagePrompt) {
   console.log(`  🔍 Grok searching for a real high-res photo...`)
   try {
@@ -260,28 +282,46 @@ async function findImageWithGrokSearch(title, imagePrompt) {
       input: [
         {
           role: 'system',
-          content: 'You are an image search assistant. Use web_search to find freely usable high-resolution photos. Return only JSON.',
+          content: `You are an image URL finder. Search the web and return ONLY a raw JSON object — no explanation, no markdown, no prose.
+Preferred sources: Unsplash (images.unsplash.com), Wikimedia Commons (upload.wikimedia.org), Pexels (images.pexels.com).
+The imageUrl must be a direct CDN link to the image file itself, not a web page.`,
         },
         {
           role: 'user',
-          content: `Search the web for the best freely usable high-resolution photograph for an article titled: "${title}"\nVisual description: ${imagePrompt}\n\nSearch these sites (in order):\n1. Unsplash.com — get the direct CDN URL: https://images.unsplash.com/photo-...\n2. Pexels.com — get the direct photo CDN URL\n3. Wikimedia Commons — for factual/historical topics\n\nRequirements: landscape orientation, 1920x1080 minimum, freely usable (CC0), no watermarks, directly downloadable URL.\n\nReturn ONLY this JSON (nothing else):\n{"imageUrl": "https://...", "credit": "Photo by Name on Site"}`,
+          content: `Find the best freely usable, high-resolution photograph for: "${title}"\nVisual context: ${imagePrompt}\n\nFor movies/TV/entertainment: find official promo art or a Wikimedia Commons image.\nFor other topics: search Unsplash or Pexels for a landscape photo.\n\nOutput ONLY this JSON — nothing before or after:\n{"imageUrl":"DIRECT_IMAGE_CDN_URL","credit":"Photo by X on Site"}`,
         },
       ],
       tools: [{ type: 'web_search' }],
     })
 
-    const content = extractGrokText(response)
-    const match = content.match(/\{"imageUrl"[^}]+\}/)
-    if (!match) throw new Error('No imageUrl in Grok response')
+    const raw = extractGrokText(response)
 
-    const { imageUrl, credit } = JSON.parse(match[0])
-    if (!imageUrl || !imageUrl.startsWith('http')) throw new Error('Invalid URL')
+    // Strategy 1: extract JSON block
+    let imageUrl = '', credit = ''
+    const jsonMatch = raw.match(/\{[^{}]*"imageUrl"\s*:\s*"(https?:[^"]+)"[^{}]*\}/)
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0])
+        imageUrl = parsed.imageUrl || ''
+        credit = parsed.credit || ''
+      } catch {
+        imageUrl = jsonMatch[1]
+      }
+    }
 
-    // Verify the URL is actually a downloadable image
-    const probe = await fetch(imageUrl, { method: 'HEAD' }).catch(() => null)
-    if (!probe?.ok) throw new Error(`Not reachable (${probe?.status ?? 'network error'})`)
-    const ct = probe.headers.get('content-type') || ''
-    if (!ct.startsWith('image/')) throw new Error(`Not an image (${ct})`)
+    // Strategy 2: scan full text for a trusted image CDN URL
+    if (!imageUrl) {
+      for (const pattern of TRUSTED_IMAGE_PATTERNS) {
+        const m = raw.match(pattern)
+        if (m) { imageUrl = m[0].replace(/[",)>]+$/, ''); break }
+      }
+    }
+
+    if (!imageUrl) throw new Error(`No image URL found in response`)
+
+    // Verify it's actually a downloadable image (with redirect following)
+    const ok = await verifyImageUrl(imageUrl)
+    if (!ok) throw new Error(`URL did not return image content: ${imageUrl.slice(0, 80)}`)
 
     console.log(`  ✅ Real photo found: ${credit || imageUrl.slice(0, 80)}`)
     return { url: imageUrl, credit }
@@ -297,11 +337,21 @@ async function getImage(title, imagePrompt, tags) {
 
   if (source === 'none') return null
 
-  // When using Grok mode in auto, first try to find a real web photo
-  if (useGrok && source === 'auto') {
-    const found = await findImageWithGrokSearch(title, imagePrompt)
-    if (found) return found
-    // fall through to next available source
+  // --image=web  OR  Grok mode with auto → try real web photo first
+  if (source === 'web' || (useGrok && source === 'auto')) {
+    if (!grokClient) {
+      console.warn(`  ⚠️  --image=web requires GROK_API_KEY — falling back to next source`)
+    } else {
+      const found = await findImageWithGrokSearch(title, imagePrompt)
+      if (found) return found
+      if (source === 'web') {
+        // explicit web mode — don't fall through to AI generation, try Unsplash instead
+        if (UNSPLASH_KEY) return searchUnsplash(tags)
+        console.warn(`  ⚠️  Web image search failed and no Unsplash key — skipping image`)
+        return null
+      }
+    }
+    // auto mode falls through to next available source below
   }
 
   if (source === 'ideogram') {
