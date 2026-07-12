@@ -295,8 +295,6 @@ body {
   .article-page-wrapper {
     display: grid;
     grid-template-columns: 1fr 260px;
-    grid-template-rows: auto;
-    align-items: start;
     gap: 3rem;
     padding: 0 2rem;
   }
@@ -307,11 +305,12 @@ body {
     min-width: 0;
   }
   .toc-sidebar-wrapper {
-    padding-top: 31rem; /* ~496px — pushes ToC past breadcrumb + title + meta + hero image */
-  }
-  .sidebar-panel {
+    align-self: start;
     position: sticky;
     top: 88px;
+    padding-top: 2.5rem;
+  }
+  .sidebar-panel {
     max-height: calc(100vh - 110px);
     overflow-y: auto;
   }
