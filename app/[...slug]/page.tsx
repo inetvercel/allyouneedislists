@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Calendar, Tag, ChevronRight } from 'lucide-react'
@@ -259,10 +260,13 @@ export default async function SlugPage({
       /<h2>(\d{1,2})\.[\s\u00A0]*/g,
       '<h2 class="numbered-h2"><span class="list-num">$1</span>'
     )
+    // Detect visitor country for region-appropriate affiliate links (Vercel geo)
+    const reqHeaders = await headers()
+    const country = reqHeaders.get('x-vercel-ip-country') || ''
     // Inject anchor IDs, ad slots, then affiliate links
     cleanedContent = injectH2Ids(cleanedContent)
     cleanedContent = injectAdSlots(cleanedContent)
-    cleanedContent = injectAffiliateLinks(cleanedContent)
+    cleanedContent = injectAffiliateLinks(cleanedContent, country)
     const toc = extractToc(cleanedContent)
     const listItems = extractListItems(cleanedContent, fullPath)
     const categoryIds = post.categories?.map((c) => c._id) || []
