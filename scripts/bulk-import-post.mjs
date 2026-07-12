@@ -224,6 +224,18 @@ HTML CONTENT STRUCTURE (follow exactly):
 After item 4 and after item 8, insert:
 <!-- IMAGE: [25-word photorealistic prompt] -->
 
+VISUAL VARIETY RULE — every 3–4 items, insert ONE of these:
+
+Option A — Stat card (ONLY for real, verifiable stats from a named organisation):
+<div class="stat-card"><span class="stat-number">[e.g. 73%]</span><span class="stat-label">[One sentence — what the stat means]</span><a class="stat-source" href="[REAL URL of the report]" target="_blank" rel="noopener">[Organisation, Report Title, Year]</a></div>
+CRITICAL STAT RULES: ONLY use named credible sources (Gallup, Statista, McKinsey, Pew, Gartner, Forbes, IDC, Buffer, HubSpot etc). Include org name + year. NEVER invent or estimate a stat. NEVER say "per industry surveys" or "studies show". If no real stat exists, use Option B or C instead.
+
+Option B — Quote card:
+<div class="quote-card">"[Relevant quote]"<cite>[Source name, role]</cite></div>
+
+Option C — Callout box:
+<div class="callout"><strong>💡 Pro tip:</strong> [Actionable insight]</div>
+
 5. CONCLUSION — 2-3 sentences.
 
 6. FAQ:

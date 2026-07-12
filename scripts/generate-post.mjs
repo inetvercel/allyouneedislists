@@ -491,8 +491,14 @@ IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment
 
 VISUAL VARIETY RULE — every 3–4 items, insert ONE of these elements to break up the text:
 
-Option A — Stat card (for a striking number or fact):
-<div class="stat-card"><span class="stat-number">[e.g. 73%]</span><span class="stat-label">[Concise context sentence about what this stat means]</span></div>
+Option A — Stat card (ONLY for real, verifiable stats from a named organisation):
+<div class="stat-card"><span class="stat-number">[e.g. 73%]</span><span class="stat-label">[One sentence — what the stat means in plain English]</span><a class="stat-source" href="[REAL URL of the report/study — must be a real link you are confident exists]" target="_blank" rel="noopener">[Organisation name, Report title, Year — e.g. Buffer, State of Remote Work 2024]</a></div>
+CRITICAL STAT RULES — violating these is unacceptable:
+- ONLY use stats from named, credible organisations: Gallup, Statista, McKinsey, Pew Research, Gartner, Forbes, IDC, Buffer, HubSpot, Salesforce, etc.
+- The stat MUST include the organisation name and year
+- NEVER invent or estimate a statistic
+- NEVER use vague phrases like "per recent industry surveys", "studies show", "research suggests", "experts say"
+- If you cannot cite a real stat from a real source, use Option B or C instead — do NOT fabricate a number
 
 Option B — Quote card (expert opinion or user testimonial):
 <div class="quote-card">"[Compelling quote relevant to this section]"<cite>[Source name or role]</cite></div>
