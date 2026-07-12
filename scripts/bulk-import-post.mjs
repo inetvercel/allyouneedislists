@@ -39,24 +39,31 @@ if (!inputFile || !existsSync(inputFile)) {
 }
 
 const input = JSON.parse(readFileSync(inputFile, 'utf-8'))
-const { title, category = '', rawContent = '', links = [] } = input
+const { title, category = '', rawContent = '', links = [], useGrok: inputUseGrok = false } = input
+const useGrok = args.includes('--grok') || inputUseGrok
+const grokModel = args.find(a => a.startsWith('--grok-model='))?.split('=')[1] || process.env.GROK_MODEL || 'grok-4'
 
 // Clean up temp file
 try { unlinkSync(inputFile) } catch {}
 
 // ─── Env ──────────────────────────────────────────────────────────────────────
 const OPENAI_KEY = process.env.OPENAI_API_KEY
+const GROK_KEY = process.env.GROK_API_KEY || process.env.XAI_API_KEY
 const IDEOGRAM_KEY = process.env.IDEOGRAM_API_KEY
 const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY
 const PROJECT_ID = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || process.env.SANITY_PROJECT_ID
 const DATASET = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
 const TOKEN = process.env.SANITY_WRITE_TOKEN
 
-if (!OPENAI_KEY) { console.error('❌ OPENAI_API_KEY missing'); process.exit(1) }
+if (useGrok && !GROK_KEY) { console.error('❌ GROK_API_KEY missing'); process.exit(1) }
+if (!useGrok && !OPENAI_KEY) { console.error('❌ OPENAI_API_KEY missing'); process.exit(1) }
 if (!PROJECT_ID || !TOKEN) { console.error('❌ Sanity env vars missing'); process.exit(1) }
 
+if (useGrok) console.log(`✅ Grok ${grokModel} + web_search + x_search`)
+
 // ─── Clients ──────────────────────────────────────────────────────────────────
-const openai = new OpenAI({ apiKey: OPENAI_KEY })
+const openai = OPENAI_KEY ? new OpenAI({ apiKey: OPENAI_KEY }) : null
+const grokClient = GROK_KEY ? new OpenAI({ apiKey: GROK_KEY, baseURL: 'https://api.x.ai/v1' }) : null
 const sanity = createClient({ projectId: PROJECT_ID, dataset: DATASET, token: TOKEN, apiVersion: '2024-01-01', useCdn: false })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -75,17 +82,39 @@ const CATEGORY_MAP = {
 }
 
 // ─── Content generation from user notes ───────────────────────────────────────
+async function callModel(messages) {
+  if (useGrok) {
+    const response = await grokClient.chat.completions.create({
+      model: grokModel,
+      messages,
+      tools: [{ type: 'web_search' }, { type: 'x_search' }],
+    })
+    const content = response.choices[0].message.content
+    const match = content.match(/\{[\s\S]+\}/)
+    if (!match) throw new Error(`Grok response not JSON: ${content.slice(0, 200)}`)
+    return match[0]
+  }
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages,
+    response_format: { type: 'json_object' },
+  })
+  return response.choices[0].message.content
+}
+
 async function generateFromUserContent() {
-  console.log(`  📝 GPT formatting your content...`)
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  console.log(`  📝 ${useGrok ? `Grok ${grokModel} + web search` : 'GPT-4o'} formatting your content...`)
 
   const linksBlock = links.length
     ? `\n\nEXTERNAL LINKS TO INCLUDE (work these in naturally as references across 4–5 items):\n${links.map(l => `- ${l}`).join('\n')}`
     : ''
 
   const hasContent = rawContent.trim().length > 50
+  const grokInstruction = useGrok ? `Today's date: ${today}\nUse web_search to verify and enrich this content with the most current information available.\n\n` : ''
 
   const userPrompt = hasContent
-    ? `Transform the following user-provided research/notes into a polished, publication-ready listicle about: "${title}"
+    ? `${grokInstruction}Transform the following user-provided research/notes into a polished, publication-ready listicle about: "${title}"
 Category: ${category || 'auto-detect'}
 
 USER'S RESEARCH/NOTES (use this as your primary source — expand, enrich, and structure it properly):
@@ -109,7 +138,7 @@ Return ONLY valid JSON — no markdown, no code fences:
   "suggestedCategory": "${category || 'auto-detect — one of: ai, business, technology, entertainment, travel, lifestyle, statistics, directories'}",
   "tags": ["6 to 8 specific lowercase hyphenated tags"]
 }`
-    : `Write a complete, publication-ready listicle about: "${title}"
+    : `${grokInstruction}Write a complete, publication-ready listicle about: "${title}"
 Category: ${category || 'auto-detect'}${linksBlock}
 
 CRITICAL TITLE RULE: Never include a specific number in the title unless your content actually contains exactly that many entries.
@@ -155,12 +184,10 @@ After item 4 and after item 8, insert:
 [6-8 faq-items]
 </div>`
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      {
-        role: 'system',
-        content: `You are a senior editor at "All You Need Is Lists". Write 2,500-4,000 word articles with specific real details, prices, stats, named examples. Direct second-person voice. E-E-A-T quality.
+  const messages = [
+    {
+      role: 'system',
+      content: `You are a senior editor at "All You Need Is Lists". Write 2,500-4,000 word articles with specific real details, prices, stats, named examples. Direct second-person voice. E-E-A-T quality.
 
 LINKING RULES:
 - Internal links: <a href="/path">text</a>
@@ -168,13 +195,11 @@ LINKING RULES:
 - 4-5 external links spread across different items (use user-provided links where given)
 
 ${HTML_STRUCTURE}`,
-      },
-      { role: 'user', content: userPrompt },
-    ],
-    response_format: { type: 'json_object' },
-  })
+    },
+    { role: 'user', content: userPrompt },
+  ]
 
-  const raw = response.choices[0].message.content
+  const raw = await callModel(messages)
   const parsed = JSON.parse(raw)
   parsed.slug = cleanSlug(parsed.slug || title)
   return parsed

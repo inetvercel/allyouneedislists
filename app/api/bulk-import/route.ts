@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const { title, category = '', rawContent = '', links = [] } = body
+  const { title, category = '', rawContent = '', links = [], model = 'gpt' } = body
 
   if (!title?.trim()) {
     return new Response(JSON.stringify({ error: 'title is required' }), { status: 400 })
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
   // Write input to a temp file
   const tmpFile = resolve(tmpdir(), `bulk-${Date.now()}-${Math.random().toString(36).slice(2)}.json`)
-  writeFileSync(tmpFile, JSON.stringify({ title: title.trim(), category, rawContent, links }), 'utf-8')
+  writeFileSync(tmpFile, JSON.stringify({ title: title.trim(), category, rawContent, links, useGrok: model === 'grok' }), 'utf-8')
 
   const encoder = new TextEncoder()
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         ? resolve(process.cwd(), 'scripts/bulk-import-post.mjs')
         : resolve(process.cwd(), 'scripts/bulk-import-post.mjs')
 
-      const child = spawn('node', [scriptPath, `--input=${tmpFile}`], {
+      const child = spawn('node', [scriptPath, `--input=${tmpFile}`, ...(model === 'grok' ? ['--grok'] : [])], {
         cwd: resolve(process.cwd()),
         env: process.env as NodeJS.ProcessEnv,
       })

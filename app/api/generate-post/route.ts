@@ -5,7 +5,7 @@ export const maxDuration = 120
 export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
-  const { topic, category } = await request.json()
+  const { topic, category, model } = await request.json()
 
   const encoder = new TextEncoder()
 
@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       const safeTopic = String(topic).replace(/"/g, "'").slice(0, 200)
       const args = ['scripts/generate-post.mjs', safeTopic]
       if (category) args.push(`--category=${category}`)
+      if (model === 'grok') args.push('--grok')
 
       const child = spawn('node', args, {
         cwd: resolve(process.cwd()),

@@ -51,6 +51,7 @@ function makeRow(overrides: Partial<Row> = {}): Row {
 
 export function BulkImporterTool() {
   const [rows, setRows] = useState<Row[]>([makeRow()])
+  const [model, setModel] = useState('gpt')
   const [pasteMode, setPasteMode] = useState(false)
   const [pasteText, setPasteText] = useState('')
   const [pasteError, setPasteError] = useState('')
@@ -182,6 +183,7 @@ export function BulkImporterTool() {
             category: row.category,
             rawContent: row.rawContent,
             links: linkArr,
+            model,
           }),
         })
 
@@ -271,6 +273,22 @@ export function BulkImporterTool() {
             </Stack>
           )}
         </div>
+
+        {/* Model selector */}
+        <Flex gap={3} align="center" style={{ flexWrap: 'wrap' }}>
+          <Stack space={1} style={{ minWidth: 200 }}>
+            <Text size={1} weight="semibold">AI Model</Text>
+            <Select value={model} onChange={(e: FormEvent<HTMLSelectElement>) => setModel((e.currentTarget as HTMLSelectElement).value)}>
+              <option value="gpt">GPT-4o (fast, no search)</option>
+              <option value="grok">Grok + Web Search 🔍 (real-time)</option>
+            </Select>
+          </Stack>
+          {model === 'grok' && (
+            <Card padding={3} radius={2} tone="caution" style={{ flex: 1 }}>
+              <Text size={1}>⚡ <strong>Grok + Search</strong> will use live web &amp; X search before writing — best for current events, trending topics, recent releases. Needs <code>GROK_API_KEY</code>.</Text>
+            </Card>
+          )}
+        </Flex>
 
         {/* Toolbar */}
         <Flex align="center" justify="space-between" gap={2} style={{ flexWrap: 'wrap' }}>

@@ -44,6 +44,7 @@ interface TopicRow extends Topic {
 export function AIStudioTool() {
   const [category, setCategory] = useState('')
   const [count, setCount] = useState('25')
+  const [model, setModel] = useState('gpt')
   const [topics, setTopics] = useState<TopicRow[]>([])
   const [loading, setLoading] = useState(false)
   const [runningId, setRunningId] = useState<string | null>(null)
@@ -98,7 +99,7 @@ export function AIStudioTool() {
         const res = await fetch('/api/generate-post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ topic: topic.title, category: topic.category }),
+          body: JSON.stringify({ topic: topic.title, category: topic.category, model }),
         })
 
         if (!res.body) throw new Error('No stream body')
@@ -154,7 +155,7 @@ export function AIStudioTool() {
         {/* Controls */}
         <Card padding={4} radius={3} shadow={1}>
           <Stack space={4}>
-            <Grid columns={3} gap={3}>
+            <Grid columns={4} gap={3}>
               <Stack space={2}>
                 <Text size={1} weight="semibold">Category</Text>
                 <Select value={category} onChange={(e: FormEvent<HTMLSelectElement>) => setCategory((e.currentTarget as HTMLSelectElement).value)}>
@@ -164,11 +165,18 @@ export function AIStudioTool() {
                 </Select>
               </Stack>
               <Stack space={2}>
-                <Text size={1} weight="semibold">Number of suggestions</Text>
+                <Text size={1} weight="semibold">Suggestions</Text>
                 <Select value={count} onChange={(e: FormEvent<HTMLSelectElement>) => setCount((e.currentTarget as HTMLSelectElement).value)}>
                   <option value="10">10 topics</option>
                   <option value="25">25 topics</option>
                   <option value="40">40 topics</option>
+                </Select>
+              </Stack>
+              <Stack space={2}>
+                <Text size={1} weight="semibold">AI Model</Text>
+                <Select value={model} onChange={(e: FormEvent<HTMLSelectElement>) => setModel((e.currentTarget as HTMLSelectElement).value)}>
+                  <option value="gpt">GPT-5.5 (fast)</option>
+                  <option value="grok">Grok + Web Search 🔍</option>
                 </Select>
               </Stack>
               <Stack space={2}>
@@ -183,6 +191,11 @@ export function AIStudioTool() {
                 />
               </Stack>
             </Grid>
+            {model === 'grok' && (
+              <Card padding={3} radius={2} tone="caution">
+                <Text size={1}>⚡ <strong>Grok + Search</strong> — uses real-time web &amp; X search for up-to-date articles. Requires <code>GROK_API_KEY</code> in env. Slightly slower.</Text>
+              </Card>
+            )}
           </Stack>
         </Card>
 

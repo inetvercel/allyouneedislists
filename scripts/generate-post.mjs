@@ -45,6 +45,8 @@ const batchFile = args.find(a => a.startsWith('--batch='))?.split('=')[1]
 const topicArg = args.find(a => !a.startsWith('--'))
 const categoryArg = args.find(a => a.startsWith('--category='))?.split('=')[1] || null
 const isDraft = args.includes('--draft')
+const useGrok = args.includes('--grok')
+const grokModel = args.find(a => a.startsWith('--grok-model='))?.split('=')[1] || process.env.GROK_MODEL || 'grok-4'
 const skipImages = args.includes('--skip-images')
 const useHD = args.includes('--hd')
 const imageSource = args.find(a => a.startsWith('--image='))?.split('=')[1] || 'auto'
@@ -72,21 +74,25 @@ Options:
 
 // ─── Validate env ─────────────────────────────────────────────────────────────
 const OPENAI_KEY = process.env.OPENAI_API_KEY
+const GROK_KEY = process.env.GROK_API_KEY || process.env.XAI_API_KEY
 const IDEOGRAM_KEY = process.env.IDEOGRAM_API_KEY
 const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY
 const PROJECT_ID = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || process.env.SANITY_PROJECT_ID
 const DATASET = process.env.NEXT_PUBLIC_SANITY_DATASET || process.env.SANITY_DATASET || 'production'
 const TOKEN = process.env.SANITY_WRITE_TOKEN
 
-if (!OPENAI_KEY) { console.error('❌ OPENAI_API_KEY not set in .env.local'); process.exit(1) }
+if (useGrok && !GROK_KEY) { console.error('❌ GROK_API_KEY not set in .env.local'); process.exit(1) }
+if (!useGrok && !OPENAI_KEY) { console.error('❌ OPENAI_API_KEY not set in .env.local'); process.exit(1) }
 if (!PROJECT_ID) { console.error('❌ NEXT_PUBLIC_SANITY_PROJECT_ID not set'); process.exit(1) }
 if (!TOKEN) { console.error('❌ SANITY_WRITE_TOKEN not set'); process.exit(1) }
 
+if (useGrok) console.log(`✅ Grok API (${grokModel}) with web_search + x_search`)
 if (IDEOGRAM_KEY) console.log('✅ Ideogram API key loaded')
 if (UNSPLASH_KEY) console.log('✅ Unsplash API key loaded')
 
 // ─── Clients ──────────────────────────────────────────────────────────────────
-const openaiClient = new OpenAI({ apiKey: OPENAI_KEY })
+const openaiClient = OPENAI_KEY ? new OpenAI({ apiKey: OPENAI_KEY }) : null
+const grokClient = GROK_KEY ? new OpenAI({ apiKey: GROK_KEY, baseURL: 'https://api.x.ai/v1' }) : null
 
 const sanity = createClient({
   projectId: PROJECT_ID,
@@ -129,6 +135,23 @@ async function callOpenAI(messages, jsonMode = false) {
     ...(jsonMode && { response_format: { type: 'json_object' } }),
   })
   return response.choices[0].message.content
+}
+
+// ─── Grok helper (web_search + x_search) ──────────────────────────────────────
+async function callGrok(messages) {
+  const response = await grokClient.chat.completions.create({
+    model: grokModel,
+    messages,
+    tools: [
+      { type: 'web_search' },
+      { type: 'x_search' },
+    ],
+  })
+  const content = response.choices[0].message.content
+  // Extract JSON block in case Grok wraps it with text or citations
+  const match = content.match(/\{[\s\S]+\}/)
+  if (!match) throw new Error(`Grok did not return JSON. Response: ${content.slice(0, 300)}`)
+  return match[0]
 }
 
 // ─── Ideogram image generation ────────────────────────────────────────────────
@@ -260,7 +283,8 @@ async function fetchLinksForPrompt(category) {
 
 // ─── Content generation ────────────────────────────────────────────────────────
 async function generateContent(topic, category) {
-  console.log(`  📝 GPT-5.5 generating content...`)
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  console.log(`  📝 ${useGrok ? `Grok ${grokModel} + web search` : 'GPT-5.5'} generating content...`)
 
   const relatedLinks = await fetchLinksForPrompt(category)
   const internalLinksBlock = relatedLinks.length
@@ -270,7 +294,12 @@ ${relatedLinks.map(p => `- ${p.title} → https://allyouneedislists.com${p.fullP
 
   const isComprehensive = /^list of all|all \d+ .{2,30} (movies|films|albums|games|songs|seasons|episodes)|in (chronological|release) order|complete list of/i.test(topic)
 
-  const system = `You are a senior editor at "All You Need Is Lists", a top-ranked listicle publication. Every article you write:
+  const grokSearchInstruction = useGrok ? `
+Today's date: ${today}
+You have web_search and x_search tools available. USE THEM NOW to find the most current information about this topic before writing — search for recent news, updated prices, new releases, current rankings, and fresh stats from the past few weeks. The content must reflect what is true as of today.
+` : ''
+
+  const system = `${grokSearchInstruction}You are a senior editor at "All You Need Is Lists", a top-ranked listicle publication. Every article you write:
 - Is ${isComprehensive ? '4,000–6,000 words of comprehensive, reference-quality content' : '3,000–3,500 words of genuinely useful, expert-level content'}
 - Contains specific real-world details, prices, stats, and named examples — never vague generalisations
 - Uses a direct, confident second-person voice ("you", "your")
@@ -362,10 +391,14 @@ Return ONLY valid JSON — no markdown, no code fences:
   "tags": ["6 to 8 specific lowercase hyphenated tags"]
 }`
 
-  const raw = await callOpenAI([
+  const messages = [
     { role: 'system', content: system },
     { role: 'user', content: user },
-  ], true)
+  ]
+
+  const raw = useGrok
+    ? await callGrok(messages)
+    : await callOpenAI(messages, true)
 
   const parsed = JSON.parse(raw)
   parsed.slug = cleanSlug(parsed.slug || parsed.title)
@@ -513,7 +546,7 @@ async function processOneTopic(topic, category) {
   console.log(`\n🚀 Generating: "${topic}"`)
   console.log(`   Category override: ${category || 'auto-detect'}`)
   const imgMode = skipImages ? 'skip' : `${imageSource}${useHD ? ' HD' : ''}`
-  console.log(`   Mode: ${isDraft ? 'draft' : 'publish'} | Images: ${imgMode}`)
+  console.log(`   Model: ${useGrok ? `Grok ${grokModel} + search` : 'GPT-5.5'} | Mode: ${isDraft ? 'draft' : 'publish'} | Images: ${imgMode}`)
 
   // 1. Content
   const content = await generateContent(topic, category)
