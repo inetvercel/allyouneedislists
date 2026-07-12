@@ -306,11 +306,13 @@ body {
     padding: 2.5rem 0;
     min-width: 0;
   }
+  .toc-sidebar-wrapper {
+    padding-top: 31rem; /* ~496px — pushes ToC past breadcrumb + title + meta + hero image */
+  }
   .toc-sidebar-nav {
-    padding-top: 2.5rem;
     position: sticky;
-    top: 80px;
-    max-height: calc(100vh - 100px);
+    top: 88px;
+    max-height: calc(100vh - 110px);
     overflow-y: auto;
   }
 }

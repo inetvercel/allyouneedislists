@@ -527,7 +527,7 @@ export default async function SlugPage({
 
       {/* Sticky sidebar ToC — desktop only, hidden on mobile */}
       {toc.length >= 4 && (
-        <div className="hidden lg:block">
+        <div className="hidden lg:block toc-sidebar-wrapper">
           <TableOfContents items={toc} variant="sidebar" />
         </div>
       )}
