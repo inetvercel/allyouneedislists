@@ -108,7 +108,7 @@ export const getRelatedPostsQuery = groq`
     && !defined(redirectTo)
     && _id != $currentId
     && count((categories[]._ref)[@ in $categoryIds]) > 0
-  ] | order(date desc) [0...4] {
+  ] | order(date desc) [0...6] {
     ${POST_CARD_FIELDS}
   }
 `

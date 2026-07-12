@@ -336,6 +336,34 @@ body {
   margin: 0 0 0.75rem;
 }
 
+/* ── Progress bar ────────────────────────────────────────────────────────────── */
+.sp-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.sp-progress-track {
+  flex: 1;
+  height: 3px;
+  background: #f0f0f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.sp-progress-fill {
+  height: 100%;
+  background: #E63946;
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+.sp-progress-pct {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #aaa;
+  min-width: 2.5rem;
+  text-align: right;
+}
+
 /* ── ToC list ───────────────────────────────────────────────────────────────── */
 .sp-toc-list {
   list-style: none;
@@ -346,29 +374,32 @@ body {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  padding: 0.3rem 0;
-  font-size: 0.82rem;
+  padding: 0.35rem 0 0.35rem 0.5rem;
+  margin-left: -0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
   color: #555;
   text-decoration: none;
   transition: color 0.15s;
-  border-radius: 4px;
+  border-left: 2px solid transparent;
+  border-radius: 0 3px 3px 0;
 }
 .sp-toc-item:hover { color: #E63946; }
 .sp-toc-dot {
-  font-size: 0.5rem;
+  font-size: 0.55rem;
   color: #ccc;
   flex-shrink: 0;
-  line-height: 1.8;
   width: 12px;
   text-align: center;
   transition: color 0.15s;
 }
-.sp-toc-text { flex: 1; line-height: 1.4; }
+.sp-toc-text { flex: 1; line-height: 1.45; }
 
-/* Active item */
+/* Active item — red text + bold + left border */
 .sp-toc-item.sp-toc-active {
   color: #E63946;
   font-weight: 700;
+  border-left-color: #E63946;
 }
 .sp-toc-item.sp-toc-active .sp-toc-dot {
   color: #E63946;
@@ -376,7 +407,9 @@ body {
 }
 
 /* Done (scrolled past) */
-.sp-toc-item.sp-toc-done { color: #bbb; }
+.sp-toc-item.sp-toc-done {
+  color: #bbb;
+}
 .sp-toc-item.sp-toc-done .sp-toc-dot {
   color: #bbb;
   font-size: 0.6rem;
