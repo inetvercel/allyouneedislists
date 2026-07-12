@@ -27,8 +27,10 @@ function stripHtml(h: string) { return h.replace(/<[^>]*>/g, '').replace(/&[^;]+
 
 // ── Components ─────────────────────────────────────────────────────────────────
 
-function CatPill({ name, href }: { name: string; href?: string }) {
-  const cls = 'inline-block px-2.5 py-[3px] bg-[#E63946] text-white text-[10px] font-black uppercase tracking-widest rounded-full'
+function CatTag({ name, href, dark = false }: { name: string; href?: string; dark?: boolean }) {
+  const cls = dark
+    ? 'inline-block px-2 py-0.5 bg-[#E63946] text-white text-[9px] font-black uppercase tracking-[0.12em] rounded-sm'
+    : 'inline-block text-[9px] font-black uppercase tracking-[0.12em] text-[#E63946]'
   return href ? <Link href={href} className={cls}>{name}</Link> : <span className={cls}>{name}</span>
 }
 
@@ -50,23 +52,27 @@ function HeroCard({ post }: { post: PostCardType }) {
     ? urlFor(post.featuredImage).width(1400).height(700).fit('crop').url()
     : null
   return (
-    <Link href={href} className="group relative block overflow-hidden rounded-2xl shadow-xl" style={{ aspectRatio: '21/9' }}>
+    <Link href={href} className="group relative block overflow-hidden rounded-xl" style={{ aspectRatio: '2/1' }}>
       {img
         ? <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-700" priority />
         : <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-700" />}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/5" />
-      <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-12">
-        {cat && <CatPill name={cat.name} />}
-        <h1 className="mt-3 text-3xl md:text-5xl font-black text-white leading-tight mb-3 max-w-3xl group-hover:text-red-100 transition-colors">
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+      <div className="absolute inset-0 flex flex-col justify-end p-7 md:p-10">
+        {cat && (
+          <span className="inline-block mb-2.5 px-2 py-0.5 bg-[#E63946] text-white text-[9px] font-black uppercase tracking-[0.15em] rounded-sm w-fit">
+            {cat.name}
+          </span>
+        )}
+        <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-white leading-tight mb-2.5 max-w-2xl">
           {post.title}
         </h1>
         {post.excerpt && (
-          <p className="text-gray-300 text-sm md:text-base max-w-2xl line-clamp-2 mb-5">
+          <p className="text-white/70 text-sm max-w-xl line-clamp-2 mb-5 hidden md:block">
             {stripHtml(post.excerpt)}
           </p>
         )}
-        <span className="inline-flex items-center gap-2 text-sm font-bold text-white bg-[#E63946] px-5 py-2.5 rounded-xl w-fit group-hover:bg-red-700 transition-colors">
-          Read the list <ArrowRight size={14} />
+        <span className="inline-flex items-center gap-2 text-xs font-black text-white border border-white/40 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-md w-fit group-hover:bg-white group-hover:text-gray-900 transition-all uppercase tracking-widest">
+          Read the list <ArrowRight size={12} />
         </span>
       </div>
     </Link>
@@ -81,29 +87,26 @@ function EditorialCard({ post, size = 'md' }: { post: PostCardType; size?: 'lg' 
     ? urlFor(post.featuredImage).width(w).height(Math.round(w * 0.6)).fit('crop').url()
     : null
   return (
-    <Link href={href} className="group flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 h-full">
-      <div className="relative overflow-hidden bg-gray-100" style={{ aspectRatio: '16/10' }}>
+    <Link href={href} className="group flex flex-col overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow duration-200 h-full border border-gray-100">
+      <div className="relative overflow-hidden bg-gray-100" style={{ aspectRatio: '16/9' }}>
         {img
-          ? <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-[1.04] transition-transform duration-500" />
-          : <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-              <span className="text-5xl font-black text-gray-400/40">#</span>
-            </div>}
+          ? <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-[1.03] transition-transform duration-500" />
+          : <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200" />}
         {cat && (
-          <div className="absolute top-3 left-3">
-            <CatPill name={cat.name} />
-          </div>
+          <span className="absolute top-2.5 left-2.5 px-1.5 py-0.5 bg-[#E63946] text-white text-[8px] font-black uppercase tracking-[0.12em] rounded-sm">
+            {cat.name}
+          </span>
         )}
       </div>
-      <div className="p-4 flex flex-col flex-1">
-        <h3 className={`font-black text-gray-900 leading-snug mb-1.5 line-clamp-2 group-hover:text-[#E63946] transition-colors ${size === 'lg' ? 'text-xl' : 'text-base'}`}>
+      <div className="p-3.5 flex flex-col flex-1">
+        {cat && <span className="text-[9px] font-black uppercase tracking-[0.12em] text-[#E63946] mb-1">{cat.name}</span>}
+        <h3 className={`font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-[#E63946] transition-colors ${size === 'lg' ? 'text-lg mb-2' : 'text-[0.9rem] mb-1'}`}>
           {post.title}
         </h3>
-        {post.excerpt && size !== 'sm' && (
+        {post.excerpt && size === 'lg' && (
           <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-3 flex-1">{stripHtml(post.excerpt)}</p>
         )}
-        <div className="flex items-center gap-1.5 text-gray-400 text-xs mt-auto pt-2 border-t border-gray-50">
-          <Calendar size={11} /><time>{formatDate(post.date)}</time>
-        </div>
+        <time className="text-[10px] text-gray-400 mt-auto">{formatDate(post.date)}</time>
       </div>
     </Link>
   )
@@ -113,23 +116,22 @@ function RowCard({ post, index }: { post: PostCardType; index: number }) {
   const href = post.fullPath || `/${post.slug}`
   const cat = post.categories?.[0]
   const img = post.featuredImage?.asset
-    ? urlFor(post.featuredImage).width(140).height(100).fit('crop').url()
+    ? urlFor(post.featuredImage).width(160).height(110).fit('crop').url()
     : null
   return (
-    <Link href={href} className="group flex items-center gap-4 py-3.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 px-2 -mx-2 rounded-lg transition-colors">
-      <span className="text-3xl font-black text-gray-100 w-9 text-center flex-shrink-0 group-hover:text-[#E63946]/20 transition-colors tabular-nums">
-        {String(index + 1).padStart(2, '0')}
+    <Link href={href} className="group flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
+      <span className="text-[11px] font-black text-gray-400 w-5 text-center flex-shrink-0 tabular-nums group-hover:text-[#E63946] transition-colors">
+        {index + 1}
       </span>
-      <div className="relative flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden bg-gray-100 hidden sm:block">
+      <div className="relative flex-shrink-0 w-14 h-10 rounded overflow-hidden bg-gray-100">
         {img && <Image src={img} alt={post.title} fill className="object-cover" />}
       </div>
       <div className="flex-1 min-w-0">
-        {cat && <span className="text-[10px] font-black uppercase tracking-widest text-[#E63946]">{cat.name}</span>}
-        <h4 className="text-gray-900 text-sm font-bold leading-snug line-clamp-1 group-hover:text-[#E63946] transition-colors mt-0.5">
+        {cat && <span className="text-[8px] font-black uppercase tracking-[0.12em] text-[#E63946]">{cat.name}</span>}
+        <h4 className="text-[0.8rem] font-bold text-gray-800 leading-snug line-clamp-2 group-hover:text-[#E63946] transition-colors mt-0.5">
           {post.title}
         </h4>
       </div>
-      <ArrowRight size={13} className="text-gray-300 group-hover:text-[#E63946] flex-shrink-0 transition-colors" />
     </Link>
   )
 }
@@ -138,16 +140,16 @@ function InlineCard({ post }: { post: PostCardType }) {
   const href = post.fullPath || `/${post.slug}`
   const cat = post.categories?.[0]
   const img = post.featuredImage?.asset
-    ? urlFor(post.featuredImage).width(200).height(140).fit('crop').url()
+    ? urlFor(post.featuredImage).width(220).height(150).fit('crop').url()
     : null
   return (
-    <Link href={href} className="group flex gap-3 items-start py-3.5 border-b border-gray-100 last:border-0">
-      <div className="relative flex-shrink-0 w-20 h-14 rounded-lg overflow-hidden bg-gray-100">
+    <Link href={href} className="group flex gap-3 items-center py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 -mx-1 px-1 rounded transition-colors">
+      <div className="relative flex-shrink-0 w-[72px] h-[50px] rounded overflow-hidden bg-gray-100">
         {img && <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />}
       </div>
       <div className="flex-1 min-w-0">
-        {cat && <span className="text-[10px] font-black uppercase tracking-widest text-[#E63946]">{cat.name}</span>}
-        <h4 className="text-gray-900 text-sm font-bold leading-snug line-clamp-2 group-hover:text-[#E63946] transition-colors mt-0.5">
+        {cat && <span className="text-[8px] font-black uppercase tracking-[0.12em] text-[#E63946]">{cat.name}</span>}
+        <h4 className="text-[0.82rem] font-semibold text-gray-800 leading-snug line-clamp-2 group-hover:text-[#E63946] transition-colors mt-0.5">
           {post.title}
         </h4>
       </div>
@@ -200,16 +202,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       {/* ── HERO ── */}
       {hero && (
-        <section className="max-w-7xl mx-auto px-4 pt-8">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#E63946]">Featured</span>
-          </div>
+        <section className="max-w-7xl mx-auto px-4 pt-6">
           <HeroCard post={hero} />
         </section>
       )}
 
       {/* ── FRESH PICKS + TRENDING ── */}
-      <section className="max-w-7xl mx-auto px-4 pt-14">
+      <section className="max-w-7xl mx-auto px-4 pt-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Left: Fresh Picks 2-col grid */}
           <div className="lg:col-span-2">
