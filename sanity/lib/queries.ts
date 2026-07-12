@@ -136,7 +136,8 @@ export const getSitemapPostsQuery = groq`
     && !(fullPath match "*/[0-9][0-9][0-9]")
   ] | order(date desc) [$start...$end] {
     fullPath,
-    date
+    date,
+    updatedAt
   }
 `
 

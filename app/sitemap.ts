@@ -28,7 +28,7 @@ export default async function sitemap({
 
   const [posts, categories] = await Promise.all([
     client
-      .fetch<{ fullPath: string; date: string }[]>(getSitemapPostsQuery, { start, end })
+      .fetch<{ fullPath: string; date: string; updatedAt?: string }[]>(getSitemapPostsQuery, { start, end })
       .catch(() => []),
     id === 0
       ? client
@@ -39,7 +39,7 @@ export default async function sitemap({
 
   const postEntries: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${SITE_URL}${post.fullPath}`,
-    lastModified: new Date(post.date),
+    lastModified: new Date(post.updatedAt || post.date),
     changeFrequency: 'monthly',
     priority: 0.7,
   }))

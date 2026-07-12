@@ -14,6 +14,7 @@ import {
 } from '@/sanity/lib/queries'
 import PostCard from '@/components/PostCard'
 import Pagination from '@/components/Pagination'
+import { injectAffiliateLinks } from '@/lib/affiliates'
 import type { PostFull, Category } from '@/types'
 
 const PER_PAGE = 18
@@ -130,6 +131,50 @@ function calcReadingTime(html: string): number {
   return Math.max(1, Math.ceil(words / 200))
 }
 
+function injectH2Ids(html: string): string {
+  let i = 0
+  return html.replace(/<h2([^>]*)>/gi, (_, attrs) => {
+    i++
+    if (/\bid\s*=/i.test(attrs)) return `<h2${attrs}>`
+    return `<h2${attrs} id="section-${i}">`
+  })
+}
+
+function injectAdSlots(html: string): string {
+  let count = 0
+  return html.replace(/<\/h2>/gi, () => {
+    count++
+    if (count === 3 || count === 7) {
+      return `</h2><div class="ad-slot ad-slot-inline" aria-label="Advertisement"></div>`
+    }
+    return '</h2>'
+  })
+}
+
+function extractToc(html: string): { id: string; text: string }[] {
+  const items: { id: string; text: string }[] = []
+  const re = /<h2[^>]*id="(section-\d+)"[^>]*>([\s\S]*?)<\/h2>/gi
+  let m
+  while ((m = re.exec(html)) !== null) {
+    const raw = m[2].replace(/<[^>]*>/g, '').trim().replace(/^\d+\s*/, '')
+    if (raw && !/frequently asked/i.test(raw)) items.push({ id: m[1], text: raw })
+  }
+  return items
+}
+
+function extractListItems(html: string, pagePath: string) {
+  const items: { position: number; name: string; url: string }[] = []
+  const re = /<h2[^>]*id="(section-\d+)"[^>]*>([\s\S]*?)<\/h2>/gi
+  let m
+  while ((m = re.exec(html)) !== null) {
+    const raw = m[2].replace(/<[^>]*>/g, '').trim().replace(/^\d+\s*/, '')
+    if (raw && !/frequently asked/i.test(raw)) {
+      items.push({ position: items.length + 1, name: raw, url: `${pagePath}#${m[1]}` })
+    }
+  }
+  return items
+}
+
 function getFreshnessDate(date: string, updatedAt?: string): string | null {
   if (!updatedAt) return null
   const published = new Date(date).getTime()
@@ -214,6 +259,12 @@ export default async function SlugPage({
       /<h2>(\d{1,2})\.[\s\u00A0]*/g,
       '<h2 class="numbered-h2"><span class="list-num">$1</span>'
     )
+    // Inject anchor IDs, ad slots, then affiliate links
+    cleanedContent = injectH2Ids(cleanedContent)
+    cleanedContent = injectAdSlots(cleanedContent)
+    cleanedContent = injectAffiliateLinks(cleanedContent)
+    const toc = extractToc(cleanedContent)
+    const listItems = extractListItems(cleanedContent, fullPath)
     const categoryIds = post.categories?.map((c) => c._id) || []
     const relatedPosts = categoryIds.length
       ? await client.fetch(getRelatedPostsQuery, { currentId: post._id, categoryIds }).catch(() => [])
@@ -257,9 +308,9 @@ export default async function SlugPage({
             },
           }),
           author: {
-            '@type': 'Organization',
-            name: 'All You Need Is Lists',
-            url: 'https://allyouneedislists.com',
+            '@type': 'Person',
+            name: 'AYNIL Editorial Team',
+            url: 'https://allyouneedislists.com/about',
           },
           publisher: {
             '@type': 'Organization',
@@ -284,16 +335,26 @@ export default async function SlugPage({
             item: `https://allyouneedislists.com${crumb.href}`,
           })),
         },
+        ...(listItems.length >= 3
+          ? [{
+              '@type': 'ItemList',
+              name: post.title,
+              numberOfItems: listItems.length,
+              itemListElement: listItems.map((item) => ({
+                '@type': 'ListItem',
+                position: item.position,
+                name: item.name,
+                url: `https://allyouneedislists.com${item.url}`,
+              })),
+            }]
+          : []),
         ...(faqs.length > 0
           ? [{
               '@type': 'FAQPage',
               mainEntity: faqs.map(({ q, a }) => ({
                 '@type': 'Question',
                 name: q,
-                acceptedAnswer: {
-                  '@type': 'Answer',
-                  text: a,
-                },
+                acceptedAnswer: { '@type': 'Answer', text: a },
               })),
             }]
           : []),
@@ -398,6 +459,20 @@ export default async function SlugPage({
           </div>
         )}
 
+        {/* Table of Contents */}
+        {toc.length >= 4 && (
+          <nav className="toc-box" aria-label="Table of contents">
+            <strong>📋 In This Article</strong>
+            <ol>
+              {toc.map((item) => (
+                <li key={item.id}>
+                  <a href={`#${item.id}`}>{item.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+
         {/* Content */}
         <div
           className="post-content-body"
@@ -421,6 +496,19 @@ export default async function SlugPage({
             </div>
           </div>
         )}
+
+        {/* Author box */}
+        <div className="mt-10 pt-6 border-t border-gray-100 flex items-start gap-4">
+          <div className="w-11 h-11 rounded-full bg-[#E63946] flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-black text-sm">AY</span>
+          </div>
+          <div>
+            <p className="font-bold text-sm text-gray-900">AYNIL Editorial Team</p>
+            <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+              Researched and written by the All You Need Is Lists editorial team. Our lists are regularly reviewed and updated with the latest information.
+            </p>
+          </div>
+        </div>
 
         {/* Related posts */}
         {relatedPosts.length > 0 && (

@@ -191,9 +191,18 @@ HTML CONTENT STRUCTURE (follow exactly):
 [one li per remaining item]
 </ul></div>
 
-2. INTRO — 2-3 sentences.
+2. COMPARISON TABLE (immediately after Quick Picks — one row per list item):
+<div class="comparison-table-wrapper"><table class="comparison-table">
+<thead><tr><th>#</th><th>Name</th><th>Best For</th><th>Price</th><th>Rating</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>[Item Name]</td><td>[Ideal use case]</td><td>[Price or Free]</td><td>★★★★★</td></tr>
+[one <tr> per item]
+</tbody>
+</table></div>
 
-3. LIST ITEMS (10-12, each as its own numbered entry — do NOT group):
+3. INTRO — 2-3 sentences.
+
+4. LIST ITEMS (10-12, each as its own numbered entry — do NOT group):
 <h2>N. [Item Name]</h2>
 <p class="best-for"><strong>Best for:</strong> [ideal reader/use case]</p>
 <p>[What it is, why it stands out, specific differentiator]</p>
@@ -202,9 +211,9 @@ HTML CONTENT STRUCTURE (follow exactly):
 After item 4 and after item 8, insert:
 <!-- IMAGE: [25-word photorealistic prompt] -->
 
-4. CONCLUSION — 2-3 sentences.
+5. CONCLUSION — 2-3 sentences.
 
-5. FAQ:
+6. FAQ:
 <div class="faq-section"><h2>Frequently Asked Questions</h2>
 <div class="faq-item"><h3>[Question?]</h3><p>[Answer 2-3 sentences]</p></div>
 [6-8 faq-items]

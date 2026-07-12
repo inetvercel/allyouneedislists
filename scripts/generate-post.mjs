@@ -475,9 +475,18 @@ IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment
 [one <li> per remaining item in the list]
 </ul></div>
 
-2. INTRO — 2-3 engaging sentences explaining why this topic matters right now.
+2. COMPARISON TABLE (immediately after Quick Picks — one row per list item):
+<div class="comparison-table-wrapper"><table class="comparison-table">
+<thead><tr><th>#</th><th>Name</th><th>Best For</th><th>Price</th><th>Rating</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>[Item Name]</td><td>[Ideal use case / audience]</td><td>[Price or Free]</td><td>★★★★★</td></tr>
+[one <tr> per item — rows must match the numbered list below exactly]
+</tbody>
+</table></div>
 
-3. LIST ITEMS — use however many items the topic genuinely needs (typically 10–12 for "best of" lists, but follow the natural scope of the subject — a topic with 7 clear winners needs 7, not padding to 10). For each item:
+3. INTRO — 2-3 engaging sentences explaining why this topic matters right now.
+
+4. LIST ITEMS — use however many items the topic genuinely needs (typically 10–12 for "best of" lists, but follow the natural scope of the subject — a topic with 7 clear winners needs 7, not padding to 10). For each item:
 <h2>N. [Item Name]</h2>
 <p class="best-for"><strong>Best for:</strong> [one sentence describing the ideal reader or use case]</p>
 <p>[Paragraph 1 — what it is, why it stands out, specific differentiator]</p>
@@ -487,9 +496,9 @@ IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment
 IMAGE PLACEHOLDERS: After item 4 and after item 8, insert exactly this comment on its own line:
 <!-- IMAGE: [25-word photorealistic prompt for a scene related to items in this section] -->
 
-4. CONCLUSION — 2-3 sentence wrap-up.
+5. CONCLUSION — 2-3 sentence wrap-up.
 
-5. FAQ SECTION (last element):
+6. FAQ SECTION (last element):
 <div class="faq-section"><h2>Frequently Asked Questions</h2>
 <div class="faq-item"><h3>[Question?]</h3><p>[Concise, helpful answer in 2-3 sentences]</p></div>
 [6 to 8 faq-item divs covering the most common reader questions]
