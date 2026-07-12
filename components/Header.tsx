@@ -117,7 +117,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center gap-2.5 pl-2 pr-3">
             <LogoMark size={32} />
-            <span className="hidden sm:block text-[16px] font-extrabold tracking-tight whitespace-nowrap leading-none">
+            <span className="block text-[14px] sm:text-[16px] font-extrabold tracking-tight whitespace-nowrap leading-none">
               <span className="text-white">AllYouNeedIs</span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E63946] to-[#ff8a5c]">Lists</span>
             </span>

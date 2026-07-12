@@ -12,11 +12,11 @@ const BROWSE = [
 ]
 
 const POPULAR = [
-  { label: 'Best Productivity Apps',     href: '/category/productivity' },
-  { label: 'Best AI Tools',              href: '/category/ai-tools' },
-  { label: 'Best Password Managers',     href: '/category/software' },
-  { label: 'Best Note-Taking Apps',      href: '/category/software' },
-  { label: 'Best Project Management',    href: '/category/business' },
+  { label: 'Best Productivity Apps',     href: '/business/productivity-apps-remote-workers' },
+  { label: 'Best Password Managers',     href: '/technology/best-password-managers' },
+  { label: 'Best Gaming Laptops',        href: '/technology/best-gaming-laptops' },
+  { label: 'High-Value Skills to Learn', href: '/technology/high-value-skills' },
+  { label: "World's Busiest Airports",   href: '/business/busiest-airports-passenger-rankings' },
 ]
 
 const COMPANY = [
