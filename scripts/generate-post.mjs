@@ -683,7 +683,10 @@ async function createSanityPost({ content, featuredImage, categoryRefs, tagRefs,
 }
 
 // ─── Main pipeline ─────────────────────────────────────────────────────────────
-async function processOneTopic(topic, category) {
+async function processOneTopic(rawTopic, category) {
+  const currentYear = new Date().getFullYear()
+  const topic = rawTopic.replace(/\b20\d{2}\b/g, String(currentYear))
+  if (topic !== rawTopic) console.log(`   📅 Year updated to ${currentYear}: "${topic}"`)
   console.log(`\n🚀 Generating: "${topic}"`)
   console.log(`   Category override: ${category || 'auto-detect'}`)
   const imgMode = skipImages ? 'skip' : `${imageSource}${useHD ? ' HD' : ''}`

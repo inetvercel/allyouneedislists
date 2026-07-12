@@ -39,7 +39,9 @@ if (!inputFile || !existsSync(inputFile)) {
 }
 
 const input = JSON.parse(readFileSync(inputFile, 'utf-8'))
-const { title, category = '', rawContent = '', links = [], useGrok: inputUseGrok = false, imageMode: inputImageMode = 'auto' } = input
+const _currentYear = new Date().getFullYear()
+const { title: _rawTitle, category = '', rawContent = '', links = [], useGrok: inputUseGrok = false, imageMode: inputImageMode = 'auto' } = input
+const title = _rawTitle.replace(/\b20\d{2}\b/g, String(_currentYear))
 const useGrok = args.includes('--grok') || inputUseGrok
 const grokModel = args.find(a => a.startsWith('--grok-model='))?.split('=')[1] || process.env.GROK_MODEL || 'grok-4'
 const imageSource = args.find(a => a.startsWith('--image='))?.split('=')[1] || inputImageMode || 'auto'
