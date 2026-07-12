@@ -17,6 +17,7 @@ import PostCard from '@/components/PostCard'
 import Pagination from '@/components/Pagination'
 import { injectAffiliateLinks } from '@/lib/affiliates'
 import TableOfContents from '@/components/TableOfContents'
+import SidebarPanel from '@/components/SidebarPanel'
 import type { PostFull, Category } from '@/types'
 
 const PER_PAGE = 18
@@ -525,12 +526,14 @@ export default async function SlugPage({
         )}
       </article>
 
-      {/* Sticky sidebar ToC — desktop only, hidden on mobile */}
-      {toc.length >= 4 && (
-        <div className="hidden lg:block toc-sidebar-wrapper">
-          <TableOfContents items={toc} variant="sidebar" />
-        </div>
-      )}
+      {/* Sticky sidebar panel — desktop only */}
+      <div className="hidden lg:block toc-sidebar-wrapper">
+        <SidebarPanel
+          items={toc}
+          title={post.title}
+          url={`https://allyouneedislists.com${fullPath}`}
+        />
+      </div>
     </div>
     )
   }
