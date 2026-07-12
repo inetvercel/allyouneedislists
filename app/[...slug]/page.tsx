@@ -144,12 +144,12 @@ function injectH2Ids(html: string): string {
 
 function injectAdSlots(html: string): string {
   let count = 0
-  return html.replace(/<\/h2>/gi, () => {
+  return html.replace(/<h2/gi, (match) => {
     count++
     if (count === 3 || count === 7) {
-      return `</h2><div class="ad-slot ad-slot-inline" aria-label="Advertisement"></div>`
+      return `<div class="ad-slot ad-slot-inline" aria-label="Advertisement"></div><h2`
     }
-    return '</h2>'
+    return match
   })
 }
 
