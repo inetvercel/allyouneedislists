@@ -41,66 +41,65 @@ function SectionRule({ label, href, icon }: { label: string; href: string; icon?
   )
 }
 
-// ── Hero (3-up: big cover + 2 stacked subs) ───────────────────────────────────
+// ── Dark hero (Ars Technica style) ────────────────────────────────────────────
 
-function HeroMain({ post }: { post: PostCardType }) {
+function ArsStoryRow({ post }: { post: PostCardType }) {
   const href = post.fullPath || `/${post.slug}`
   const cat  = post.categories?.[0]
-  const img  = post.featuredImage?.asset ? urlFor(post.featuredImage).width(1100).height(680).fit('crop').url() : null
+  const img  = post.featuredImage?.asset ? urlFor(post.featuredImage).width(160).height(110).fit('crop').url() : null
   return (
-    <Link href={href} className="group relative flex overflow-hidden rounded-xl" style={{ minHeight: 380 }}>
-      {img ? <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-700" priority /> : <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-700" />}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
-      <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-9">
-        {cat && <span className="inline-block mb-2 px-2 py-0.5 bg-[#E63946] text-white text-[9px] font-black uppercase tracking-[0.15em] rounded-sm w-fit">{cat.name}</span>}
-        <h1 className="text-2xl md:text-[2rem] lg:text-[2.4rem] font-black text-white leading-tight mb-3 max-w-xl group-hover:text-red-100 transition-colors">{post.title}</h1>
-        {post.excerpt && <p className="text-white/65 text-sm line-clamp-2 mb-5 hidden md:block max-w-lg">{stripHtml(post.excerpt)}</p>}
-        <span className="inline-flex items-center gap-2 text-[11px] font-black text-white border border-white/35 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-md w-fit group-hover:bg-white group-hover:text-gray-900 transition-all uppercase tracking-widest">
-          Read the list <ArrowRight size={11} />
-        </span>
+    <Link href={href} className="group flex gap-3.5 items-start py-3.5 border-b border-white/[0.07] last:border-0 -mx-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors">
+      <div className="relative flex-shrink-0 w-[72px] h-[50px] rounded overflow-hidden bg-gray-800">
+        {img && <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        {cat && <span className="text-[8px] font-black uppercase tracking-widest text-[#E63946]">{cat.name}</span>}
+        <h4 className="text-[0.85rem] font-bold text-gray-200 leading-snug line-clamp-2 group-hover:text-white transition-colors mt-0.5">{post.title}</h4>
+        <time className="text-[10px] text-gray-600 mt-0.5 block">{formatDate(post.date)}</time>
       </div>
     </Link>
   )
 }
 
-function HeroSub({ post }: { post: PostCardType }) {
+function ArsFeatured({ post }: { post: PostCardType }) {
   const href = post.fullPath || `/${post.slug}`
   const cat  = post.categories?.[0]
-  const img  = post.featuredImage?.asset ? urlFor(post.featuredImage).width(560).height(300).fit('crop').url() : null
+  const img  = post.featuredImage?.asset ? urlFor(post.featuredImage).width(900).height(600).fit('crop').url() : null
   return (
-    <Link href={href} className="group relative flex overflow-hidden rounded-xl flex-1" style={{ minHeight: 178 }}>
-      {img ? <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-[1.04] transition-transform duration-500" /> : <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-700" />}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/15 to-transparent" />
-      <div className="absolute inset-0 flex flex-col justify-end p-4">
-        {cat && <span className="inline-block mb-1.5 px-1.5 py-0.5 bg-[#E63946] text-white text-[8px] font-black uppercase tracking-[0.12em] rounded-sm w-fit">{cat.name}</span>}
-        <h3 className="text-[0.88rem] md:text-[0.95rem] font-black text-white leading-snug line-clamp-2 group-hover:text-red-100 transition-colors">{post.title}</h3>
+    <Link href={href} className="group relative flex overflow-hidden rounded-sm h-full min-h-[360px]">
+      {img ? <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-[1.02] transition-transform duration-700" priority /> : <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-700" />}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent" />
+      <div className="absolute top-3 right-3">
+        <span className="px-2 py-0.5 bg-[#E63946] text-white text-[8px] font-black uppercase tracking-widest rounded-sm">Featured</span>
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
+        {cat && <span className="text-[9px] font-black uppercase tracking-widest text-[#E63946] mb-2 block">{cat.name}</span>}
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-black text-white leading-tight mb-2 group-hover:text-red-100 transition-colors">{post.title}</h2>
+        {post.excerpt && <p className="text-white/60 text-sm line-clamp-2 mb-3 hidden md:block">{stripHtml(post.excerpt)}</p>}
+        <time className="text-[11px] text-white/40">{formatDate(post.date)}</time>
       </div>
     </Link>
   )
 }
 
-// ── Trending strip ─────────────────────────────────────────────────────────────
+// ── Full-bleed overlay card (Ars card grid) ────────────────────────────────────
 
-const CAT_EMOJI: Record<string, string> = { technology:'💻', entertainment:'🎬', business:'💼', ai:'🤖', lifestyle:'🌿', travel:'✈️', movies:'📺', gaming:'🎮', music:'🎵', hardware:'⚙️', software:'🛠️' }
-
-function TrendingStrip({ posts }: { posts: PostCardType[] }) {
+function ArsCard({ post }: { post: PostCardType }) {
+  const href = post.fullPath || `/${post.slug}`
+  const cat  = post.categories?.[0]
+  const img  = post.featuredImage?.asset ? urlFor(post.featuredImage).width(600).height(420).fit('crop').url() : null
   return (
-    <div className="flex items-center gap-2.5 overflow-x-auto py-3 border-b border-gray-100" style={{ scrollbarWidth: 'none' }}>
-      <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#E63946] flex-shrink-0 pr-1">
-        <Flame size={11} /> Trending
-      </span>
-      <div className="w-px h-4 bg-gray-200 flex-shrink-0" />
-      {posts.map(p => {
-        const cat   = p.categories?.[0]
-        const emoji = cat ? (CAT_EMOJI[cat.name.toLowerCase()] ?? '📋') : '📋'
-        return (
-          <Link key={p._id} href={p.fullPath || `/${p.slug}`}
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-[#E63946] hover:text-white rounded-full text-[11px] font-semibold text-gray-700 transition-colors whitespace-nowrap">
-            <span>{emoji}</span><span className="max-w-[130px] truncate">{p.title}</span>
-          </Link>
-        )
-      })}
-    </div>
+    <Link href={href} className="group relative block overflow-hidden bg-gray-900" style={{ aspectRatio: '3/2' }}>
+      {img ? <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-[1.04] transition-transform duration-500" />
+            : <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-700" />}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        {cat && <span className="text-[8px] font-black uppercase tracking-widest text-[#E63946] mb-1.5 block">{cat.name}</span>}
+        <h3 className="text-white font-bold text-[0.9rem] leading-snug line-clamp-2 group-hover:text-red-200 transition-colors mb-1.5">{post.title}</h3>
+        {post.excerpt && <p className="text-white/50 text-[11px] line-clamp-2 mb-2 hidden sm:block">{stripHtml(post.excerpt)}</p>}
+        <time className="text-white/35 text-[10px]">{formatDate(post.date)}</time>
+      </div>
+    </Link>
   )
 }
 
@@ -202,46 +201,46 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const freshLead: PostCardType | null  = latest[3] ?? null
   const freshSmall: PostCardType[]      = latest.slice(4, 7)
   const trending: PostCardType[]        = latest.slice(7, 13)
-  const stripPosts: PostCardType[]      = latest.slice(7, 13)
   const S = sections as Record<string, PostCardType[]>
 
   return (
     <div className="bg-white min-h-screen">
 
-      {/* ── HERO 3-UP ── */}
-      <section className={`${W} mx-auto px-4 pt-6`}>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-3" style={{ minHeight: 380 }}>
-          {heroMain && <HeroMain post={heroMain} />}
-          <div className="flex flex-row lg:flex-col gap-3">
-            {heroSubs.map(p => <HeroSub key={p._id} post={p} />)}
+      {/* ── ARS-STYLE DARK HERO ── */}
+      <section className="bg-[#0c0c0c]">
+        <div className={`${W} mx-auto px-4 py-7`}>
+          <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-0 lg:gap-6 min-h-[380px]">
+            {/* Left: story list */}
+            <div className="border-b lg:border-b-0 lg:border-r border-white/[0.08] pb-4 lg:pb-0 lg:pr-6 flex flex-col justify-center">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#E63946] mb-3 flex items-center gap-1.5">
+                <Flame size={10} /> Latest
+              </div>
+              {[heroMain, ...heroSubs, freshLead, ...freshSmall.slice(0, 1)].filter(Boolean).slice(0, 5).map(p =>
+                p ? <ArsStoryRow key={p._id} post={p} /> : null
+              )}
+            </div>
+            {/* Right: featured big story */}
+            <div className="mt-4 lg:mt-0">
+              {trending[0] && <ArsFeatured post={trending[0]} />}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── TRENDING STRIP ── */}
-      <section className={`${W} mx-auto px-4 mt-3`}>
-        <TrendingStrip posts={stripPosts} />
-      </section>
-
-      {/* ── FRESH THIS WEEK (lead + 3 small) + TRENDING SIDEBAR ── */}
-      <section className={`${W} mx-auto px-4 pt-12`}>
+      {/* ── FRESH THIS WEEK cards + TRENDING SIDEBAR ── */}
+      <section className={`${W} mx-auto px-4 pt-10`}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2">
             <SectionRule label="Fresh This Week" href="/latest" />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-              {freshLead && (
-                <div className="sm:col-span-2">
-                  <EditorialCard post={freshLead} size="lg" />
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1">
+              {[freshLead, ...freshSmall].filter(Boolean).slice(0, 3).map(p =>
+                p ? <ArsCard key={p._id} post={p} /> : null
               )}
-              <div className="flex flex-col gap-4">
-                {freshSmall.map(p => <EditorialCard key={p._id} post={p} size="sm" />)}
-              </div>
             </div>
           </div>
           <div>
             <SectionRule label="Trending" href="/latest" icon={<TrendingUp size={13} className="text-[#E63946]" />} />
-            {trending.map((p, i) => <RowCard key={p._id} post={p} index={i} />)}
+            {trending.slice(1).map((p, i) => <RowCard key={p._id} post={p} index={i} />)}
           </div>
         </div>
       </section>

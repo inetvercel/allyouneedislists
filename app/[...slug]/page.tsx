@@ -369,108 +369,98 @@ export default async function SlugPage({
     }
 
     return (
-      <div className="article-page-wrapper">
-        <article className="article-main">
+      <>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-6 flex-wrap">
-          {breadcrumbs.map((crumb, i) => (
-            <span key={i} className="flex items-center gap-1.5">
-              {i < breadcrumbs.length - 1 ? (
-                <>
-                  <Link href={crumb.href} className="hover:text-brand-red transition-colors">
-                    {crumb.label}
+
+        {/* ── DARK ARTICLE HEADER (Ars Technica style) ───────────────────────── */}
+        <div className="bg-[#0c0c0c]">
+          <div className="max-w-[1380px] mx-auto px-4 lg:px-8">
+
+            {/* Breadcrumb */}
+            <nav className="flex items-center gap-1.5 text-xs text-gray-500 pt-5 pb-4 flex-wrap">
+              {breadcrumbs.map((crumb, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  {i < breadcrumbs.length - 1 ? (
+                    <>
+                      <Link href={crumb.href} className="hover:text-gray-300 transition-colors">{crumb.label}</Link>
+                      <ChevronRight size={11} className="text-gray-700" />
+                    </>
+                  ) : (
+                    <span className="text-gray-600 line-clamp-1">{crumb.label}</span>
+                  )}
+                </span>
+              ))}
+            </nav>
+
+            {/* Refreshed banner */}
+            {post.originalPath && (
+              <div className="flex items-center gap-2 mb-4 text-xs text-amber-400 bg-amber-900/20 border border-amber-800/40 rounded-lg px-4 py-2.5">
+                <span>🔄</span>
+                <span>Updated from <span className="font-semibold">&ldquo;{post.originalTitle || post.originalPath}&rdquo;</span></span>
+              </div>
+            )}
+
+            {/* Split: title (left) + image (right) */}
+            <div className={`grid gap-6 lg:gap-10 pb-8 items-end ${imageUrl ? 'grid-cols-1 lg:grid-cols-[1fr_460px]' : 'grid-cols-1 max-w-3xl'}`}>
+
+              {/* Left: categories + title + meta */}
+              <div className="py-2 lg:py-6">
+                {post.categories && post.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {post.categories.map((cat) => (
+                      <Link key={cat._id} href={`/category/${cat.slug}`}
+                        className="text-[10px] font-black uppercase tracking-widest text-[#E63946] bg-[#E63946]/10 hover:bg-[#E63946] hover:text-white px-2.5 py-1 rounded-sm transition-colors">
+                        {cat.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+                <h1 className="text-3xl md:text-4xl lg:text-[2.8rem] font-black text-white leading-tight mb-5">
+                  {post.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={13} className="text-gray-500" />
+                    <time dateTime={post.date}>{formatDate(post.date)}</time>
+                  </div>
+                  <span className="text-gray-700">·</span>
+                  <span>{readingTime} min read</span>
+                  {freshnessDate && (
+                    <>
+                      <span className="text-gray-700">·</span>
+                      <span className="text-green-400 text-xs font-bold">Updated {formatMonthYear(freshnessDate)}</span>
+                    </>
+                  )}
+                  <span className="text-gray-700">·</span>
+                  <Link href="/contact"
+                    className="text-[10px] font-black uppercase tracking-widest text-[#E63946] hover:text-red-400 transition-colors">
+                    Get Listed
                   </Link>
-                  <ChevronRight size={12} />
-                </>
-              ) : (
-                <span className="text-gray-600 font-medium line-clamp-1">{crumb.label}</span>
+                </div>
+              </div>
+
+              {/* Right: featured image */}
+              {imageUrl && (
+                <div className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/60" style={{ aspectRatio: '16/9' }}>
+                  <Image src={imageUrl} alt={post.featuredImage?.alt || post.title} fill
+                    className="object-cover" priority />
+                </div>
               )}
-            </span>
-          ))}
-        </nav>
-
-        {/* Refreshed-from banner */}
-        {post.originalPath && (
-          <div className="flex items-center gap-2 mb-4 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
-            <span className="text-base">🔄</span>
-            <span>
-              Updated from <span className="font-semibold">&ldquo;{post.originalTitle || post.originalPath}&rdquo;</span>
-              {' '}—{' '}
-              <Link href="/history" className="underline underline-offset-2 hover:text-amber-900">
-                view all updates
-              </Link>
-            </span>
+            </div>
           </div>
-        )}
-
-        {/* Categories */}
-        {post.categories && post.categories.length > 0 && (
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            {post.categories.map((cat) => (
-              <Link
-                key={cat._id}
-                href={`/category/${cat.slug}`}
-                className="text-xs font-bold uppercase tracking-widest text-brand-red hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-full"
-              >
-                {cat.name}
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* Title */}
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 leading-tight mb-4">
-          {post.title}
-        </h1>
-
-        {/* Meta */}
-        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-8 pb-8 border-b border-gray-100">
-          <div className="flex items-center gap-1.5">
-            <Calendar size={14} />
-            <time dateTime={post.date}>{formatDate(post.date)}</time>
-          </div>
-          <span className="text-gray-200">·</span>
-          <span>{readingTime} min read</span>
-          {freshnessDate && (
-            <>
-              <span className="text-gray-200">·</span>
-              <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                Updated {formatMonthYear(freshnessDate)}
-              </span>
-            </>
-          )}
-          <>
-            <span className="text-gray-200">·</span>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-1 bg-[#E63946] text-white text-xs font-bold px-2.5 py-1 rounded-full hover:bg-[#c1121f] transition-colors"
-            >
-              Get Listed
-            </Link>
-          </>
         </div>
+
+        {/* ── CONTENT GRID ────────────────────────────────────────────────────── */}
+        <div className="article-page-wrapper">
+        <article className="article-main">
 
         {/* Mobile ToC — inside article, collapsible. Hidden on desktop (sidebar handles it there) */}
         {toc.length >= 4 && (
-          <div className="lg:hidden mb-6">
+          <div className="lg:hidden mb-6 mt-6">
             <TableOfContents items={toc} variant="mobile" />
-          </div>
-        )}
-
-        {/* Featured Image */}
-        {imageUrl && (
-          <div className="relative w-full pb-[52%] rounded-2xl overflow-hidden mb-10 shadow-md">
-            <Image
-              src={imageUrl}
-              alt={post.featuredImage?.alt || post.title}
-              fill
-              className="object-cover absolute inset-0"
-              priority
-            />
           </div>
         )}
 
@@ -542,7 +532,8 @@ export default async function SlugPage({
           relatedPosts={relatedPosts}
         />
       </div>
-    </div>
+      </div>{/* end article-page-wrapper */}
+      </>
     )
   }
 
