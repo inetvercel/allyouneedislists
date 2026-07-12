@@ -59,7 +59,7 @@ if (useGrok && !GROK_KEY) { console.error('❌ GROK_API_KEY missing'); process.e
 if (!useGrok && !OPENAI_KEY) { console.error('❌ OPENAI_API_KEY missing'); process.exit(1) }
 if (!PROJECT_ID || !TOKEN) { console.error('❌ Sanity env vars missing'); process.exit(1) }
 
-if (useGrok) console.log(`✅ Grok ${grokModel} + web_search + x_search`)
+if (useGrok) console.log(`✅ Grok ${grokModel} + live_search`)
 
 // ─── Clients ──────────────────────────────────────────────────────────────────
 const openai = OPENAI_KEY ? new OpenAI({ apiKey: OPENAI_KEY }) : null
@@ -82,14 +82,28 @@ const CATEGORY_MAP = {
 }
 
 // ─── Content generation from user notes ───────────────────────────────────────
+function extractGrokText(response) {
+  if (Array.isArray(response.output)) {
+    for (const item of response.output) {
+      if (item.type === 'message') {
+        for (const c of (item.content || [])) {
+          if (c.type === 'output_text' && c.text) return c.text
+        }
+      }
+    }
+  }
+  if (response.output_text) return String(response.output_text)
+  return ''
+}
+
 async function callModel(messages) {
   if (useGrok) {
-    const response = await grokClient.chat.completions.create({
+    const response = await grokClient.responses.create({
       model: grokModel,
-      messages,
+      input: messages,
       tools: [{ type: 'web_search' }, { type: 'x_search' }],
     })
-    const content = response.choices[0].message.content
+    const content = extractGrokText(response)
     const match = content.match(/\{[\s\S]+\}/)
     if (!match) throw new Error(`Grok response not JSON: ${content.slice(0, 200)}`)
     return match[0]
@@ -111,7 +125,7 @@ async function generateFromUserContent() {
     : ''
 
   const hasContent = rawContent.trim().length > 50
-  const grokInstruction = useGrok ? `Today's date: ${today}\nUse web_search to verify and enrich this content with the most current information available.\n\n` : ''
+  const grokInstruction = useGrok ? `Today's date: ${today}\nUse live_search to find and verify the most current information available before writing.\n\n` : ''
 
   const userPrompt = hasContent
     ? `${grokInstruction}Transform the following user-provided research/notes into a polished, publication-ready listicle about: "${title}"
@@ -209,9 +223,9 @@ ${HTML_STRUCTURE}`,
 async function findImageWithGrokSearch(postTitle, imagePrompt) {
   console.log(`  🔍 Grok searching for a real high-res photo...`)
   try {
-    const response = await grokClient.chat.completions.create({
+    const response = await grokClient.responses.create({
       model: grokModel,
-      messages: [
+      input: [
         {
           role: 'system',
           content: 'You are an image search assistant. Use web_search to find freely usable high-resolution photos. Return only JSON.',
@@ -224,7 +238,7 @@ async function findImageWithGrokSearch(postTitle, imagePrompt) {
       tools: [{ type: 'web_search' }],
     })
 
-    const content = response.choices[0].message.content || ''
+    const content = extractGrokText(response)
     const match = content.match(/\{"imageUrl"[^}]+\}/)
     if (!match) throw new Error('No imageUrl in Grok response')
 

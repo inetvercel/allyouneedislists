@@ -86,7 +86,7 @@ if (!useGrok && !OPENAI_KEY) { console.error('❌ OPENAI_API_KEY not set in .env
 if (!PROJECT_ID) { console.error('❌ NEXT_PUBLIC_SANITY_PROJECT_ID not set'); process.exit(1) }
 if (!TOKEN) { console.error('❌ SANITY_WRITE_TOKEN not set'); process.exit(1) }
 
-if (useGrok) console.log(`✅ Grok API (${grokModel}) with web_search + x_search`)
+if (useGrok) console.log(`✅ Grok API (${grokModel}) with live_search`)
 if (IDEOGRAM_KEY) console.log('✅ Ideogram API key loaded')
 if (UNSPLASH_KEY) console.log('✅ Unsplash API key loaded')
 
@@ -137,17 +137,33 @@ async function callOpenAI(messages, jsonMode = false) {
   return response.choices[0].message.content
 }
 
-// ─── Grok helper (web_search + x_search) ──────────────────────────────────────
+// ─── Grok helper (Responses API + web_search/x_search) ───────────────────────────
+function extractGrokText(response) {
+  // Responses API: response.output is array of {type:'message', content:[{type:'output_text',text:'...'}]}
+  if (Array.isArray(response.output)) {
+    for (const item of response.output) {
+      if (item.type === 'message') {
+        for (const c of (item.content || [])) {
+          if (c.type === 'output_text' && c.text) return c.text
+        }
+      }
+    }
+  }
+  // Fallback convenience accessor
+  if (response.output_text) return String(response.output_text)
+  return ''
+}
+
 async function callGrok(messages) {
-  const response = await grokClient.chat.completions.create({
+  const response = await grokClient.responses.create({
     model: grokModel,
-    messages,
+    input: messages,
     tools: [
       { type: 'web_search' },
       { type: 'x_search' },
     ],
   })
-  const content = response.choices[0].message.content
+  const content = extractGrokText(response)
   // Extract JSON block in case Grok wraps it with text or citations
   const match = content.match(/\{[\s\S]+\}/)
   if (!match) throw new Error(`Grok did not return JSON. Response: ${content.slice(0, 300)}`)
@@ -239,9 +255,9 @@ async function generateImageAI(visualPrompt) {
 async function findImageWithGrokSearch(title, imagePrompt) {
   console.log(`  🔍 Grok searching for a real high-res photo...`)
   try {
-    const response = await grokClient.chat.completions.create({
+    const response = await grokClient.responses.create({
       model: grokModel,
-      messages: [
+      input: [
         {
           role: 'system',
           content: 'You are an image search assistant. Use web_search to find freely usable high-resolution photos. Return only JSON.',
@@ -254,7 +270,7 @@ async function findImageWithGrokSearch(title, imagePrompt) {
       tools: [{ type: 'web_search' }],
     })
 
-    const content = response.choices[0].message.content || ''
+    const content = extractGrokText(response)
     const match = content.match(/\{"imageUrl"[^}]+\}/)
     if (!match) throw new Error('No imageUrl in Grok response')
 
@@ -343,7 +359,7 @@ ${relatedLinks.map(p => `- ${p.title} → https://allyouneedislists.com${p.fullP
 
   const grokSearchInstruction = useGrok ? `
 Today's date: ${today}
-You have web_search and x_search tools available. USE THEM NOW to find the most current information about this topic before writing — search for recent news, updated prices, new releases, current rankings, and fresh stats from the past few weeks. The content must reflect what is true as of today.
+You have live_search available. USE IT NOW to find the most current information about this topic before writing — search for recent news, updated prices, new releases, current rankings, and fresh stats from the past few weeks. The content must reflect what is true as of today.
 ` : ''
 
   const system = `${grokSearchInstruction}You are a senior editor at "All You Need Is Lists", a top-ranked listicle publication. Every article you write:
