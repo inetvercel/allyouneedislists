@@ -95,91 +95,75 @@ export default function Header() {
     href === '/' ? pathname === '/' : pathname?.startsWith(href) ?? false
 
   return (
-    <header className="bg-[#0c0c0c]/95 sticky top-0 z-50 backdrop-blur-md shadow-[0_1px_0_rgba(255,255,255,0.07)]">
-      {/* Red accent bar */}
-      <div className="h-[3px] bg-gradient-to-r from-brand-red via-red-500 to-red-700" />
-
-      <div className="max-w-7xl mx-auto px-4 lg:px-8">
-        <div className="flex items-center h-[72px] gap-8">
+    <header className="bg-[#111111] sticky top-0 z-50 border-b border-white/[0.07]">
+      <div className="max-w-[1380px] mx-auto px-4 lg:px-6">
+        <div className="flex items-center h-[48px] gap-0">
 
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 flex items-center">
-            <span className="flex items-center bg-white rounded-lg px-2.5 py-1.5 shadow-sm">
+          <Link href="/" className="flex-shrink-0 flex items-center mr-5">
+            <span className="flex items-center bg-white px-2 py-1">
               <Image
                 src="https://cdn.sanity.io/images/1z2ohlkj/production/fac14359f6d086b9c7df3f474e9aa22b09f53719-1585x527.png"
                 alt="All You Need Is Lists"
-                width={210}
-                height={70}
-                className="h-9 w-auto object-contain"
+                width={160}
+                height={53}
+                className="h-[28px] w-auto object-contain"
                 priority
               />
             </span>
           </Link>
 
-          {/* Divider */}
-          <div className="hidden lg:block h-7 w-px bg-white/10 flex-shrink-0" />
-
-          {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1 min-w-0">
+          {/* Desktop Nav — flat ALL CAPS links, no rounded backgrounds */}
+          <nav className="hidden lg:flex items-center flex-1 min-w-0 h-full">
             {NAV.map((item) => {
               const active = isActive(item.href)
               return (
                 <div
                   key={item.label}
-                  className="relative flex-shrink-0"
+                  className="relative h-full flex items-center"
                   onMouseEnter={() => item.children && openDropdown(item.label)}
                   onMouseLeave={() => item.children && scheduleClose()}
                 >
                   <Link
                     href={item.href}
-                    className={`relative flex items-center gap-1 px-3 py-2 text-[13px] font-semibold tracking-wide rounded-lg transition-all duration-150 ${
+                    className={`flex items-center gap-0.5 px-3 h-full text-[11px] font-bold uppercase tracking-[0.07em] transition-colors duration-100 border-b-2 ${
                       active
-                        ? 'text-white bg-white/[0.08]'
-                        : 'text-gray-400 hover:text-white hover:bg-white/[0.05]'
+                        ? 'text-white border-[#E63946]'
+                        : 'text-gray-400 hover:text-white border-transparent hover:border-white/20'
                     }`}
                   >
-                    {active && (
-                      <span className="absolute -bottom-[1px] left-3 right-3 h-[2px] bg-brand-red rounded-full" />
-                    )}
                     {item.label}
                     {item.children && (
-                      <ChevronDown
-                        size={11}
-                        className={`transition-transform duration-200 mt-px opacity-60 ${
-                          activeDropdown === item.label ? 'rotate-180 opacity-100' : ''
-                        }`}
-                      />
+                      <ChevronDown size={9} className="ml-0.5 opacity-50 mt-px" />
                     )}
                   </Link>
 
                   {/* Dropdown */}
                   {item.children && (
                     <div
-                      className={`absolute top-[calc(100%+6px)] left-0 transition-all duration-[160ms] ease-out ${
+                      className={`absolute top-full left-0 pt-0 transition-all duration-[140ms] ease-out ${
                         activeDropdown === item.label
                           ? 'opacity-100 translate-y-0 pointer-events-auto'
-                          : 'opacity-0 -translate-y-2 pointer-events-none'
+                          : 'opacity-0 -translate-y-1 pointer-events-none'
                       }`}
                       onMouseEnter={() => openDropdown(item.label)}
                       onMouseLeave={scheduleClose}
                     >
-                      <div className="bg-[#141414] border border-white/[0.1] rounded-2xl shadow-2xl shadow-black/70 overflow-hidden min-w-[190px]">
-                        <div className="h-[2px] bg-gradient-to-r from-brand-red to-red-500" />
-                        <div className="py-2 px-2">
+                      <div className="bg-[#1a1a1a] border border-white/[0.1] border-t-2 border-t-[#E63946] shadow-2xl shadow-black/80 min-w-[180px]">
+                        <div className="py-1">
                           <Link
                             href={item.href}
-                            className="flex items-center gap-2 px-3 py-2 mb-1 text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-brand-red transition-colors rounded-xl"
+                            className="flex items-center px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#E63946] transition-colors"
                           >
                             All {item.label} →
                           </Link>
-                          <div className="h-px bg-white/[0.06] mx-2 mb-1" />
+                          <div className="h-px bg-white/[0.06] mx-3 mb-1" />
                           {item.children.map((child) => (
                             <Link
                               key={child.label}
                               href={child.href}
-                              className="group flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium text-gray-300 hover:text-white hover:bg-white/[0.07] rounded-xl transition-all"
+                              className="flex items-center px-4 py-2 text-[12px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors"
                             >
-                              <span className="w-1.5 h-1.5 rounded-full bg-brand-red flex-shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
                               {child.label}
                             </Link>
                           ))}
@@ -192,43 +176,42 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Right side: Latest + Search */}
-          <div className="hidden lg:flex items-center gap-2 ml-auto flex-shrink-0">
+          {/* Right side */}
+          <div className="hidden lg:flex items-center gap-0 ml-auto flex-shrink-0 h-full">
             <Link
-              href="/"
-              className={`flex items-center gap-1.5 px-3 py-2 text-[13px] font-semibold rounded-lg transition-all ${
-                pathname === '/' ? 'text-white bg-white/[0.08]' : 'text-gray-400 hover:text-white hover:bg-white/[0.05]'
-              }`}
+              href="/contact"
+              className="flex items-center px-3 h-full text-[11px] font-black uppercase tracking-[0.07em] text-[#E63946] hover:text-red-400 transition-colors"
             >
-              Latest
+              Get Listed
             </Link>
-            <Link
-              href="/about"
-              className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-semibold text-gray-400 hover:text-white hover:bg-white/[0.05] rounded-lg transition-all"
-            >
-              About
-            </Link>
-            <div className="w-px h-5 bg-white/10 mx-1" />
+            <div className="w-px h-4 bg-white/[0.12] mx-1" />
             <Link
               href="/search"
-              className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all border border-transparent hover:border-white/10"
+              className="flex items-center justify-center w-9 h-full text-gray-400 hover:text-white transition-colors"
               aria-label="Search"
             >
-              <Search size={16} />
+              <Search size={15} />
+            </Link>
+            <div className="w-px h-4 bg-white/[0.12] mx-1" />
+            <Link
+              href="/about"
+              className="flex items-center px-3 h-full text-[11px] font-bold uppercase tracking-[0.07em] text-gray-400 hover:text-white transition-colors"
+            >
+              About
             </Link>
           </div>
 
           {/* Mobile: Search + Hamburger */}
-          <div className="lg:hidden ml-auto flex items-center gap-2">
-            <Link href="/search" className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-white transition-all" aria-label="Search">
-              <Search size={17} />
+          <div className="lg:hidden ml-auto flex items-center gap-1">
+            <Link href="/search" className="flex items-center justify-center w-9 h-9 text-gray-400 hover:text-white transition-colors" aria-label="Search">
+              <Search size={16} />
             </Link>
             <button
-              className="flex items-center justify-center w-9 h-9 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-all"
+              className="flex items-center justify-center w-9 h-9 text-gray-300 hover:text-white transition-colors"
               onClick={() => { setMobileOpen(!mobileOpen); if (mobileOpen) setExpandedMobile(null) }}
               aria-label="Toggle menu"
             >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+              {mobileOpen ? <X size={19} /> : <Menu size={19} />}
             </button>
           </div>
         </div>
@@ -236,30 +219,28 @@ export default function Header() {
 
       {/* Mobile menu */}
       <div
-        className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`lg:hidden overflow-hidden transition-all duration-200 ease-in-out ${
           mobileOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="bg-[#0a0a0a] border-t border-white/[0.07] px-4 py-4 overflow-y-auto max-h-[90vh]">
-          {/* Mobile search bar */}
+        <div className="bg-[#0f0f0f] border-t border-white/[0.07] px-4 py-3 overflow-y-auto max-h-[90vh]">
           <Link
             href="/search"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 mb-3 rounded-2xl bg-white/[0.05] border border-white/[0.08] text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-3 px-4 py-2.5 mb-2 bg-white/[0.04] border border-white/[0.07] text-gray-400 hover:text-white transition-colors"
           >
-            <Search size={15} />
-            <span className="text-sm font-medium">Search lists…</span>
+            <Search size={14} />
+            <span className="text-xs font-medium uppercase tracking-widest">Search lists…</span>
           </Link>
 
-          <div className="space-y-1">
-            {/* Latest + About first */}
-            {[{ label: 'Latest', href: '/' }, { label: 'About', href: '/about' }].map((item) => (
+          <div className="space-y-0">
+            {[{ label: 'Latest', href: '/' }, { label: 'About', href: '/about' }, { label: 'Get Listed', href: '/contact' }].map((item) => (
               <Link
                 key={item.label}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center px-4 py-3 rounded-2xl text-sm font-bold transition-colors ${
-                  isActive(item.href) ? 'text-brand-red bg-red-950/20' : 'text-white hover:bg-white/[0.06]'
+                className={`flex items-center px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-colors ${
+                  isActive(item.href) ? 'text-[#E63946]' : 'text-gray-300 hover:text-white'
                 }`}
               >
                 {item.label}
@@ -274,37 +255,33 @@ export default function Header() {
                   <>
                     <button
                       onClick={() => setExpandedMobile(expandedMobile === item.label ? null : item.label)}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold text-white hover:bg-white/[0.06] transition-colors"
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-black uppercase tracking-widest text-gray-300 hover:text-white transition-colors"
                     >
-                      <span className={isActive(item.href) ? 'text-brand-red' : ''}>{item.label}</span>
+                      <span className={isActive(item.href) ? 'text-[#E63946]' : ''}>{item.label}</span>
                       <ChevronDown
-                        size={15}
-                        className={`text-gray-500 transition-transform duration-200 ${expandedMobile === item.label ? 'rotate-180 text-brand-red' : ''}`}
+                        size={12}
+                        className={`text-gray-600 transition-transform duration-150 ${expandedMobile === item.label ? 'rotate-180 text-[#E63946]' : ''}`}
                       />
                     </button>
-                    <div className={`overflow-hidden transition-all duration-200 ${expandedMobile === item.label ? 'max-h-64' : 'max-h-0'}`}>
-                      <div className="mx-3 mb-2 bg-white/[0.03] rounded-2xl overflow-hidden border border-white/[0.07]">
-                        <div className="h-[2px] bg-gradient-to-r from-brand-red to-red-500" />
-                        <div className="p-2 space-y-0.5">
-                          <Link href={item.href} onClick={() => setMobileOpen(false)}
-                            className="flex items-center px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-brand-red transition-colors rounded-xl">
-                            All {item.label} →
+                    <div className={`overflow-hidden transition-all duration-150 ${expandedMobile === item.label ? 'max-h-64' : 'max-h-0'}`}>
+                      <div className="ml-4 mb-1 border-l border-white/[0.08]">
+                        <Link href={item.href} onClick={() => setMobileOpen(false)}
+                          className="flex items-center px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-[#E63946] transition-colors">
+                          All {item.label} →
+                        </Link>
+                        {item.children.map((child) => (
+                          <Link key={child.label} href={child.href} onClick={() => setMobileOpen(false)}
+                            className="flex items-center px-4 py-2 text-xs text-gray-500 hover:text-white transition-colors">
+                            {child.label}
                           </Link>
-                          {item.children.map((child) => (
-                            <Link key={child.label} href={child.href} onClick={() => setMobileOpen(false)}
-                              className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all">
-                              <span className="w-1.5 h-1.5 rounded-full bg-brand-red flex-shrink-0 opacity-50" />
-                              {child.label}
-                            </Link>
-                          ))}
-                        </div>
+                        ))}
                       </div>
                     </div>
                   </>
                 ) : (
                   <Link href={item.href} onClick={() => setMobileOpen(false)}
-                    className={`flex items-center px-4 py-3 rounded-2xl text-sm font-bold transition-colors ${
-                      isActive(item.href) ? 'text-brand-red bg-red-950/20' : 'text-white hover:bg-white/[0.06]'
+                    className={`flex items-center px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-colors ${
+                      isActive(item.href) ? 'text-[#E63946]' : 'text-gray-300 hover:text-white'
                     }`}
                   >
                     {item.label}
