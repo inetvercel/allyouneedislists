@@ -140,17 +140,19 @@ async function callOpenAI(messages, jsonMode = false) {
 
 // ─── Grok helper (Responses API + web_search/x_search) ───────────────────────────
 function extractGrokText(response) {
-  // Responses API: response.output is array of {type:'message', content:[{type:'output_text',text:'...'}]}
+  // Responses API output contains search call items THEN the final assistant message.
+  // Must return the LAST message item — not the first — to get the final answer.
   if (Array.isArray(response.output)) {
+    let lastText = ''
     for (const item of response.output) {
       if (item.type === 'message') {
         for (const c of (item.content || [])) {
-          if (c.type === 'output_text' && c.text) return c.text
+          if (c.type === 'output_text' && c.text) lastText = c.text
         }
       }
     }
+    if (lastText) return lastText
   }
-  // Fallback convenience accessor
   if (response.output_text) return String(response.output_text)
   return ''
 }
@@ -165,10 +167,17 @@ async function callGrok(messages) {
     ],
   })
   const content = extractGrokText(response)
-  // Extract JSON block in case Grok wraps it with text or citations
-  const match = content.match(/\{[\s\S]+\}/)
-  if (!match) throw new Error(`Grok did not return JSON. Response: ${content.slice(0, 300)}`)
-  return match[0]
+  // Balanced-brace extraction — avoids the greedy regex problem where trailing
+  // citation JSON inflates the match and breaks JSON.parse
+  const start = content.indexOf('{')
+  if (start === -1) throw new Error(`Grok did not return JSON. Response: ${content.slice(0, 300)}`)
+  let depth = 0, end = -1
+  for (let i = start; i < content.length; i++) {
+    if (content[i] === '{') depth++
+    else if (content[i] === '}') { depth--; if (depth === 0) { end = i; break } }
+  }
+  if (end === -1) throw new Error(`Grok JSON block not closed. Response: ${content.slice(0, 300)}`)
+  return content.slice(start, end + 1)
 }
 
 // ─── Ideogram image generation ────────────────────────────────────────────────
@@ -263,9 +272,9 @@ const TRUSTED_IMAGE_PATTERNS = [
 ]
 
 async function verifyImageUrl(url) {
-  // Follow redirects — some CDNs redirect; fetch a small range to confirm image
   try {
     const res = await fetch(url, { headers: { Range: 'bytes=0-1023' } })
+    if (res.status === 416) return true  // server rejects Range but URL is valid
     if (!res.ok && res.status !== 206) return false
     const ct = res.headers.get('content-type') || ''
     return ct.startsWith('image/')
@@ -409,7 +418,9 @@ ${relatedLinks.map(p => `- ${p.title} → https://allyouneedislists.com${p.fullP
 
   const grokSearchInstruction = useGrok ? `
 Today's date: ${today}
-You have live_search available. USE IT NOW to find the most current information about this topic before writing — search for recent news, updated prices, new releases, current rankings, and fresh stats from the past few weeks. The content must reflect what is true as of today.
+You have web_search and x_search tools. BEFORE writing, use them to:
+1. Find the most current information — recent news, updated prices, new releases, rankings, stats from the past few weeks.
+2. Collect 2–5 REAL, currently-accessible URLs from authoritative sources (official product/brand sites, Wikipedia, BBC/Reuters/Forbes, .gov/.edu) that are directly relevant to items in this article. You MUST use ONLY these real, verified URLs as your external links in the article. Never invent, guess, or hallucinate a URL — every external link must be a page you actually visited in this search session.
 ` : ''
 
   const system = `${grokSearchInstruction}You are a senior editor at "All You Need Is Lists", a top-ranked listicle publication. Every article you write:
@@ -424,16 +435,16 @@ LINKING RULES (follow exactly):
 - Internal links: use plain <a href="/path">anchor text</a> — no target or rel attributes
 - External links: always use <a href="URL" target="_blank" rel="noopener noreferrer">anchor text</a>
 
-EXTERNAL LINKS (4–5 per article at this length):
-- Destinations: Wikipedia for concepts/background, official brand or product pages, .gov/.edu for stats, or major publications (BBC, Forbes, Reuters) for studies/data
-- Spread them across different list items — never two in the same paragraph
-- 1 may appear in the intro or conclusion if citing a specific statistic
-- Vary the destinations — do not link to Wikipedia more than twice
-- Anchor text should be descriptive, not "click here" or the raw URL
+EXTERNAL LINKS (2–5 per article):
+${useGrok ? '- ONLY use URLs you verified via web search above — never fabricate or guess a URL' : '- Destinations: Wikipedia, official brand/product pages, .gov/.edu stats, BBC/Forbes/Reuters'}
+- Spread across different sections — never two in the same paragraph
+- Anchor text must be descriptive (e.g. "according to Reuters" or "the official NHS guidance") not "click here"
+- Do not link to Wikipedia more than twice
 
-INTERNAL LINKS (2–3 if related articles are provided):
-- Only link where genuinely relevant to the item being described
-- Do not force links — omit if nothing fits naturally`
+INTERNAL LINKS:
+${relatedLinks.length > 0
+  ? `- Add exactly 2 links from the site articles listed below — only where genuinely relevant\n- Format: <a href="/path">descriptive anchor text</a> — no domain prefix, no target attribute\n- If fewer than 2 fit naturally, add only those that do; never force a link`
+  : '- No internal link candidates available for this topic — omit internal links entirely'}`
 
   const contentStructure = isComprehensive
     ? `Structure the "content" field HTML EXACTLY like this (COMPREHENSIVE REFERENCE format):

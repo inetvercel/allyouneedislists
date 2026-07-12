@@ -85,14 +85,17 @@ const CATEGORY_MAP = {
 
 // ─── Content generation from user notes ───────────────────────────────────────
 function extractGrokText(response) {
+  // Return LAST message — search call items appear before the final assistant message
   if (Array.isArray(response.output)) {
+    let lastText = ''
     for (const item of response.output) {
       if (item.type === 'message') {
         for (const c of (item.content || [])) {
-          if (c.type === 'output_text' && c.text) return c.text
+          if (c.type === 'output_text' && c.text) lastText = c.text
         }
       }
     }
+    if (lastText) return lastText
   }
   if (response.output_text) return String(response.output_text)
   return ''
@@ -106,9 +109,16 @@ async function callModel(messages) {
       tools: [{ type: 'web_search' }, { type: 'x_search' }],
     })
     const content = extractGrokText(response)
-    const match = content.match(/\{[\s\S]+\}/)
-    if (!match) throw new Error(`Grok response not JSON: ${content.slice(0, 200)}`)
-    return match[0]
+    // Balanced-brace extraction to avoid greedy regex issues with trailing citation JSON
+    const start = content.indexOf('{')
+    if (start === -1) throw new Error(`Grok response not JSON: ${content.slice(0, 200)}`)
+    let depth = 0, end = -1
+    for (let i = start; i < content.length; i++) {
+      if (content[i] === '{') depth++
+      else if (content[i] === '}') { depth--; if (depth === 0) { end = i; break } }
+    }
+    if (end === -1) throw new Error(`Grok JSON not closed: ${content.slice(0, 200)}`)
+    return content.slice(start, end + 1)
   }
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
@@ -127,7 +137,7 @@ async function generateFromUserContent() {
     : ''
 
   const hasContent = rawContent.trim().length > 50
-  const grokInstruction = useGrok ? `Today's date: ${today}\nUse live_search to find and verify the most current information available before writing.\n\n` : ''
+  const grokInstruction = useGrok ? `Today's date: ${today}\nBEFORE writing, use web_search and x_search to:\n1. Find the most current information on this topic.\n2. Collect 2–5 real, currently-accessible URLs from authoritative sources (official pages, Wikipedia, BBC/Reuters/Forbes, .gov/.edu) relevant to the article content. You MUST use ONLY these real, verified URLs as external links — never fabricate a URL.\n\n` : ''
 
   const userPrompt = hasContent
     ? `${grokInstruction}Transform the following user-provided research/notes into a polished, publication-ready listicle about: "${title}"
@@ -206,9 +216,10 @@ After item 4 and after item 8, insert:
       content: `You are a senior editor at "All You Need Is Lists". Write 2,500-4,000 word articles with specific real details, prices, stats, named examples. Direct second-person voice. E-E-A-T quality.
 
 LINKING RULES:
-- Internal links: <a href="/path">text</a>
-- External links: <a href="URL" target="_blank" rel="noopener noreferrer">text</a>
-- 4-5 external links spread across different items (use user-provided links where given)
+- Internal links: <a href="/path">descriptive anchor text</a> — no domain, no target attribute
+- External links: <a href="URL" target="_blank" rel="noopener noreferrer">descriptive anchor text</a>
+- EXTERNAL LINKS (2–5): ${useGrok ? 'ONLY use real URLs you verified via web search — never invent a URL' : 'Wikipedia, official brand pages, .gov/.edu, BBC/Reuters/Forbes'}; spread across different sections; descriptive anchor text
+- INTERNAL LINKS: add exactly 2 from any site article URLs provided in the prompt — only where genuinely relevant; if fewer than 2 fit naturally, add only those that do
 
 ${HTML_STRUCTURE}`,
     },
@@ -233,6 +244,7 @@ const TRUSTED_IMAGE_PATTERNS = [
 async function verifyImageUrl(url) {
   try {
     const res = await fetch(url, { headers: { Range: 'bytes=0-1023' } })
+    if (res.status === 416) return true  // server rejects Range but URL is valid
     if (!res.ok && res.status !== 206) return false
     const ct = res.headers.get('content-type') || ''
     return ct.startsWith('image/')
@@ -318,7 +330,7 @@ async function getHeroImage(imagePrompt, postTitle) {
     return { url: data.data?.[0]?.url }
   }
 
-  if (UNSPLASH_KEY) {
+  if (UNSPLASH_KEY && imageSource !== 'ai') {
     console.log(`  📷 Unsplash searching for photo...`)
     const q = encodeURIComponent(postTitle.split(' ').slice(0, 3).join(' '))
     const res = await fetch(`https://api.unsplash.com/search/photos?query=${q}&per_page=5&orientation=landscape`, {
