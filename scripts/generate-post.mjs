@@ -476,14 +476,25 @@ IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment
 
 3. INTRO — 2-3 engaging sentences explaining why this topic matters right now.
 
-4. LIST ITEMS — use however many items the topic genuinely needs (typically 10–12 for "best of" lists, but follow the natural scope of the subject — a topic with 7 clear winners needs 7, not padding to 10). For each item:
+4. LIST ITEMS — use however many items the topic genuinely needs (typically 8–12 for "best of" lists). For each item:
 <h2>N. [Item Name]</h2>
 <p class="best-for"><strong>Best for:</strong> [one sentence describing the ideal reader or use case]</p>
 <p>[Paragraph 1 — what it is, why it stands out, specific differentiator]</p>
 <p>[Paragraph 2 — features, real specs/prices/data, named examples]</p>
 <p>[Paragraph 3 — practical tips, caveats, comparison context, or who should avoid it]</p>
 
-IMAGE PLACEHOLDERS: After item 4 and after item 8, insert exactly this comment on its own line:
+VISUAL VARIETY RULE — every 3–4 items, insert ONE of these elements to break up the text:
+
+Option A — Stat card (for a striking number or fact):
+<div class="stat-card"><span class="stat-number">[e.g. 73%]</span><span class="stat-label">[Concise context sentence about what this stat means]</span></div>
+
+Option B — Quote card (expert opinion or user testimonial):
+<div class="quote-card">"[Compelling quote relevant to this section]"<cite>[Source name or role]</cite></div>
+
+Option C — Callout box (pro tip, warning, or key insight):
+<div class="callout"><strong>💡 Pro tip:</strong> [Actionable insight readers can use immediately]</div>
+
+IMAGE PLACEHOLDERS: After item 3 and after item 6 (or the midpoint), insert:
 <!-- IMAGE: [25-word photorealistic prompt for a scene related to items in this section] -->
 
 5. CONCLUSION — 2-3 sentence wrap-up.
@@ -533,6 +544,13 @@ Return ONLY valid JSON — no markdown, no code fences:
   "imagePrompt": "Detailed photorealistic image prompt: specific subject, environment, lighting, mood, camera angle. No text or logos.",
   "suggestedCategory": "One of: ai, business, technology, entertainment, travel, lifestyle, statistics, directories",
   "tags": ["6 to 8 specific lowercase hyphenated tags"],
+  "externalLinks": [
+    {"url": "https://...", "phrase": "exact verbatim phrase from the article body to wrap in an <a> tag"},
+    {"url": "https://...", "phrase": "another exact phrase — must exist verbatim in your content"}
+  ],
+  "internalLinks": [
+    {"path": "/category/slug", "phrase": "exact verbatim phrase from the article body to wrap in an internal <a> tag"}
+  ],
   "content": "[Full HTML following the structure above — 3,000-3,500 words]"
 }`
 
@@ -547,6 +565,24 @@ Return ONLY valid JSON — no markdown, no code fences:
 
   const parsed = JSON.parse(raw)
   parsed.slug = cleanSlug(parsed.slug || parsed.title)
+  // Inject external links by finding exact phrases in the content
+  if (Array.isArray(parsed.externalLinks)) {
+    for (const { url, phrase } of parsed.externalLinks) {
+      if (!url || !phrase || url.includes('...')) continue
+      const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const re = new RegExp(`(?<!href="[^"]{0,300})(?<!<a[^>]{0,300}>)(${escaped})`, 'i')
+      parsed.content = parsed.content.replace(re, `<a href="${url}" target="_blank" rel="noopener noreferrer">$1</a>`)
+    }
+  }
+  // Inject internal links by finding exact phrases
+  if (Array.isArray(parsed.internalLinks)) {
+    for (const { path, phrase } of parsed.internalLinks) {
+      if (!path || !phrase) continue
+      const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const re = new RegExp(`(?<!href="[^"]{0,300})(?<!<a[^>]{0,300}>)(${escaped})`, 'i')
+      parsed.content = parsed.content.replace(re, `<a href="${path}">$1</a>`)
+    }
+  }
   return parsed
 }
 

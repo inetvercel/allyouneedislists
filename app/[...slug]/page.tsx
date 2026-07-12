@@ -16,6 +16,7 @@ import {
 import PostCard from '@/components/PostCard'
 import Pagination from '@/components/Pagination'
 import { injectAffiliateLinks } from '@/lib/affiliates'
+import TableOfContents from '@/components/TableOfContents'
 import type { PostFull, Category } from '@/types'
 
 const PER_PAGE = 18
@@ -366,7 +367,8 @@ export default async function SlugPage({
     }
 
     return (
-      <article className="max-w-4xl mx-auto px-4 py-10">
+      <div className="article-page-wrapper">
+        <article className="article-main">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -450,31 +452,22 @@ export default async function SlugPage({
           </>
         </div>
 
+        {/* Mobile ToC — inside article, above content */}
+        {toc.length >= 4 && (
+          <TableOfContents items={toc} />
+        )}
+
         {/* Featured Image */}
         {imageUrl && (
-          <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-10 shadow-md">
+          <div className="relative w-full pb-[52%] rounded-2xl overflow-hidden mb-10 shadow-md">
             <Image
               src={imageUrl}
               alt={post.featuredImage?.alt || post.title}
               fill
-              className="object-cover"
+              className="object-cover absolute inset-0"
               priority
             />
           </div>
-        )}
-
-        {/* Table of Contents */}
-        {toc.length >= 4 && (
-          <nav className="toc-box" aria-label="Table of contents">
-            <strong>📋 In This Article</strong>
-            <ol>
-              {toc.map((item) => (
-                <li key={item.id}>
-                  <a href={`#${item.id}`}>{item.text}</a>
-                </li>
-              ))}
-            </ol>
-          </nav>
         )}
 
         {/* Content */}
@@ -529,6 +522,12 @@ export default async function SlugPage({
           </section>
         )}
       </article>
+
+      {/* Sticky sidebar ToC — desktop only */}
+      {toc.length >= 4 && (
+        <TableOfContents items={toc} />
+      )}
+    </div>
     )
   }
 
