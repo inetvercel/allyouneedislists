@@ -13,23 +13,85 @@
  * to avoid over-linking, which hurts UX and SEO.
  */
 
-const TAG = process.env.AMAZON_ASSOCIATE_ID || ''
+const TAG = process.env.AMAZON_ASSOCIATE_ID || 'allyouneedislists-20'
 
-function amazonSearch(query: string): string {
+function a(query: string): string {
   return `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=${TAG}`
 }
 
+function dp(asin: string): string {
+  return `https://www.amazon.com/dp/${asin}?tag=${TAG}`
+}
+
 /**
- * Map of exact brand/product names → affiliate URLs.
- * Keys are matched case-insensitively as whole words within anchor text or paragraph text.
- * Add your entries here once you have your Amazon Associate ID.
+ * Map of brand/product names → Amazon affiliate URLs.
+ * Keys matched case-insensitively as whole words in post content.
+ * Only the FIRST match per page is linked to avoid over-linking.
+ *
+ * To add new entries: a('search terms') for search pages, dp('ASIN') for direct product links.
  */
 export const AFFILIATE_MAP: Record<string, string> = {
-  // Examples (uncomment and replace once you have your Associate ID):
-  // 'Kindle':          'https://www.amazon.com/dp/B09SWRYPG2?tag=' + TAG,
-  // 'Audible':         'https://www.amazon.com/dp/B00NB86OYE?tag=' + TAG,
-  // 'Ring Doorbell':   amazonSearch('ring video doorbell'),
-  // 'Instant Pot':     amazonSearch('instant pot'),
+  // ── E-readers & Audio ─────────────────────────────────────────────────────
+  'Kindle':                 dp('B09SWRYPG2'),
+  'Kindle Paperwhite':      dp('B08KTZ8249'),
+  'Audible':                a('audible subscription'),
+
+  // ── Smart Home ────────────────────────────────────────────────────────────
+  'Ring Doorbell':          a('ring video doorbell'),
+  'Ring Video Doorbell':    a('ring video doorbell'),
+  'Echo Dot':               a('echo dot'),
+  'Amazon Echo':            a('amazon echo'),
+  'Fire TV Stick':          dp('B08C1W5N87'),
+  'Fire TV':                a('fire tv stick'),
+  'Nest Thermostat':        a('nest thermostat'),
+  'Philips Hue':            a('philips hue smart bulbs'),
+
+  // ── Kitchen ───────────────────────────────────────────────────────────────
+  'Instant Pot':            a('instant pot'),
+  'Air Fryer':              a('air fryer'),
+  'Ninja Air Fryer':        a('ninja air fryer'),
+  'KitchenAid':             a('kitchenaid stand mixer'),
+  'Nespresso':              a('nespresso machine'),
+  'Keurig':                 a('keurig coffee maker'),
+
+  // ── Tech & Gadgets ────────────────────────────────────────────────────────
+  'AirPods':                a('apple airpods'),
+  'AirPods Pro':            a('airpods pro'),
+  'Apple Watch':            a('apple watch'),
+  'Galaxy Watch':           a('samsung galaxy watch'),
+  'iPad':                   a('apple ipad'),
+  'MacBook':                a('apple macbook'),
+  'Nintendo Switch':        a('nintendo switch'),
+  'PlayStation 5':          a('playstation 5 console'),
+  'PS5':                    a('ps5 console'),
+  'Xbox Series X':          a('xbox series x'),
+  'Raspberry Pi':           a('raspberry pi'),
+
+  // ── Fitness & Health ──────────────────────────────────────────────────────
+  'Fitbit':                 a('fitbit fitness tracker'),
+  'Garmin':                 a('garmin fitness watch'),
+  'Yoga Mat':               a('yoga mat'),
+  'Resistance Bands':       a('resistance bands'),
+  'Foam Roller':            a('foam roller'),
+
+  // ── Books & Learning ──────────────────────────────────────────────────────
+  'Audible Premium':        a('audible premium plus'),
+  'Kindle Unlimited':       a('kindle unlimited'),
+
+  // ── Travel ────────────────────────────────────────────────────────────────
+  'Travel Pillow':          a('travel neck pillow'),
+  'Packing Cubes':          a('packing cubes luggage'),
+  'Luggage':                a('carry on luggage'),
+  'Noise Cancelling Headphones': a('noise cancelling headphones'),
+  'Sony WH-1000XM5':        a('sony wh-1000xm5'),
+  'Bose QuietComfort':      a('bose quietcomfort headphones'),
+
+  // ── Productivity & Office ─────────────────────────────────────────────────
+  'Standing Desk':          a('standing desk'),
+  'Monitor':                a('monitor 4k'),
+  'Mechanical Keyboard':    a('mechanical keyboard'),
+  'Webcam':                 a('webcam 1080p'),
+  'Ring Light':             a('ring light'),
 }
 
 /**
