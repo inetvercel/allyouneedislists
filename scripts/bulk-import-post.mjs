@@ -141,7 +141,7 @@ async function generateFromUserContent() {
 
   const userPrompt = hasContent
     ? `${grokInstruction}Transform the following user-provided research/notes into a polished, publication-ready listicle about: "${title}"
-Category: ${category || 'auto-detect'}
+Filing category (taxonomy only — do NOT restrict content to this area): ${category || 'auto-detect'}
 
 USER'S RESEARCH/NOTES (use this as your primary source — expand, enrich, and structure it properly):
 ---
@@ -165,7 +165,7 @@ Return ONLY valid JSON — no markdown, no code fences:
   "tags": ["6 to 8 specific lowercase hyphenated tags"]
 }`
     : `${grokInstruction}Write a complete, publication-ready listicle about: "${title}"
-Category: ${category || 'auto-detect'}${linksBlock}
+Filing category (taxonomy only — do NOT restrict content to this area): ${category || 'auto-detect'}${linksBlock}
 
 CRITICAL TITLE RULE: Never include a specific number in the title unless your content actually contains exactly that many entries.
 

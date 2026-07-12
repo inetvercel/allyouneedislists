@@ -505,7 +505,7 @@ IMAGE PLACEHOLDERS: After item 4 and after item 8, insert exactly this comment o
 </div>`
 
   const user = `Write a complete, publication-ready ${isComprehensive ? 'reference article' : 'listicle'} about: "${topic}"
-${category ? `Suggested category: ${category}` : ''}
+${category ? `Filing category (for site taxonomy only — do NOT restrict content to this topic area; write the best article for the title): ${category}` : ''}
 
 ${internalLinksBlock ? internalLinksBlock + '\n\n' : ''}${contentStructure}
 
