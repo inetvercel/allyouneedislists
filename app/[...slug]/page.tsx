@@ -452,9 +452,11 @@ export default async function SlugPage({
           </>
         </div>
 
-        {/* Mobile ToC — inside article, above content */}
+        {/* Mobile ToC — inside article, collapsible. Hidden on desktop (sidebar handles it there) */}
         {toc.length >= 4 && (
-          <TableOfContents items={toc} />
+          <div className="lg:hidden mb-6">
+            <TableOfContents items={toc} variant="mobile" />
+          </div>
         )}
 
         {/* Featured Image */}
@@ -523,9 +525,11 @@ export default async function SlugPage({
         )}
       </article>
 
-      {/* Sticky sidebar ToC — desktop only */}
+      {/* Sticky sidebar ToC — desktop only, hidden on mobile */}
       {toc.length >= 4 && (
-        <TableOfContents items={toc} />
+        <div className="hidden lg:block">
+          <TableOfContents items={toc} variant="sidebar" />
+        </div>
       )}
     </div>
     )
