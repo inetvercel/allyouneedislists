@@ -409,10 +409,7 @@ async function generateContent(topic, category) {
   console.log(`  📝 ${useGrok ? `Grok ${grokModel} + web search` : 'GPT-5.5'} generating content...`)
 
   const relatedLinks = await fetchLinksForPrompt(category)
-  const internalLinksBlock = relatedLinks.length
-    ? `EXISTING ARTICLES ON OUR SITE (link to 2-3 of these naturally within the body if genuinely relevant — use exact URLs, internal links only, no target/_blank):
-${relatedLinks.map(p => `- ${p.title} → https://allyouneedislists.com${p.fullPath}`).join('\n')}`
-    : ''
+
 
   const isComprehensive = /^list of all|all \d+ .{2,30} (movies|films|albums|games|songs|seasons|episodes)|in (chronological|release) order|complete list of/i.test(topic)
 
@@ -431,20 +428,9 @@ You have web_search and x_search tools. BEFORE writing, use them to:
 - Demonstrates E-E-A-T: cite real data, name real products/services/places with accurate details
 - Follows a strict HTML structure (described below) — no deviation
 
-LINKING RULES (follow exactly):
-- Internal links: use plain <a href="/path">anchor text</a> — no target or rel attributes
-- External links: always use <a href="URL" target="_blank" rel="noopener noreferrer">anchor text</a>
-
-EXTERNAL LINKS (2–5 per article):
-${useGrok ? '- ONLY use URLs you verified via web search above — never fabricate or guess a URL' : '- Destinations: Wikipedia, official brand/product pages, .gov/.edu stats, BBC/Forbes/Reuters'}
-- Spread across different sections — never two in the same paragraph
-- Anchor text must be descriptive (e.g. "according to Reuters" or "the official NHS guidance") not "click here"
-- Do not link to Wikipedia more than twice
-
-INTERNAL LINKS:
-${relatedLinks.length > 0
-  ? `- Add exactly 2 links from the site articles listed below — only where genuinely relevant\n- Format: <a href="/path">descriptive anchor text</a> — no domain prefix, no target attribute\n- If fewer than 2 fit naturally, add only those that do; never force a link`
-  : '- No internal link candidates available for this topic — omit internal links entirely'}`
+LINK FORMAT (follow exactly):
+- Internal links: <a href="/path">anchor text</a> — no domain prefix, no target attribute
+- External links: <a href="URL" target="_blank" rel="noopener noreferrer">anchor text</a>`
 
   const contentStructure = isComprehensive
     ? `Structure the "content" field HTML EXACTLY like this (COMPREHENSIVE REFERENCE format):
@@ -504,10 +490,28 @@ IMAGE PLACEHOLDERS: After item 4 and after item 8, insert exactly this comment o
 [6 to 8 faq-item divs covering the most common reader questions]
 </div>`
 
+  const internalLinkCandidates = relatedLinks.length > 0
+    ? relatedLinks.map(p => `  - "${p.title}" → ${p.fullPath}`).join('\n')
+    : null
+
+  const linkingRequirements = `
+LINKING REQUIREMENTS — MANDATORY, NOT OPTIONAL:
+
+A) EXTERNAL LINKS — you MUST include 2 to 5 in the article body:
+${useGrok
+    ? '   Use ONLY real URLs you found during your web search — never fabricate. Spread them across different list items.'
+    : '   Use Wikipedia, official brand/product pages, .gov/.edu stats, or BBC/Reuters/Forbes.'}
+   Anchor text must be descriptive, e.g. <a href="https://..." target="_blank" rel="noopener noreferrer">according to the NHS</a>
+
+B) INTERNAL LINKS — ${internalLinkCandidates
+    ? `you MUST include exactly 2 from the list below (only where naturally relevant):\n${internalLinkCandidates}\n   Format: <a href="/path">descriptive text</a>`
+    : 'no candidates available — skip internal links'}
+`
+
   const user = `Write a complete, publication-ready ${isComprehensive ? 'reference article' : 'listicle'} about: "${topic}"
 ${category ? `Filing category (for site taxonomy only — do NOT restrict content to this topic area; write the best article for the title): ${category}` : ''}
-
-${internalLinksBlock ? internalLinksBlock + '\n\n' : ''}${contentStructure}
+${linkingRequirements}
+${contentStructure}
 
 CRITICAL TITLE RULE: Never include a specific number in the title (e.g. "All 44" or "25 Films") unless your content actually contains exactly that many individual entries. If unsure of the exact count, omit the number from the title.
 
