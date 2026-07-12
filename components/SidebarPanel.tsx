@@ -95,7 +95,7 @@ export default function SidebarPanel({ items, title, url, relatedPosts = [] }: P
 
       {/* ── Table of Contents ── */}
       {items.length >= 4 && (
-        <nav aria-label="In this listacle">
+        <nav aria-label="In this listacle" className="sp-card">
           <p className="sp-heading">📑 In This Listacle</p>
           <ul className="sp-toc-list">
             {items.map((item, i) => {
@@ -119,24 +119,20 @@ export default function SidebarPanel({ items, title, url, relatedPosts = [] }: P
 
       {/* ── Related Lists ── */}
       {relatedPosts.length > 0 && (
-        <>
-          <div className="sidebar-divider" />
-          <div>
-            <p className="sp-heading">🔥 Related Lists</p>
-            <ul className="sp-related-list">
-              {relatedPosts.slice(0, 5).map(p => (
-                <li key={p._id}>
-                  <Link href={p.fullPath} className="sp-related-link">{p.title}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </>
+        <div className="sp-card">
+          <p className="sp-heading">🔥 Related Lists</p>
+          <ul className="sp-related-list">
+            {relatedPosts.slice(0, 5).map(p => (
+              <li key={p._id}>
+                <Link href={p.fullPath} className="sp-related-link">{p.title}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* ── Share ── */}
-      <div className="sidebar-divider" />
-      <div>
+      <div className="sp-card">
         <p className="sp-heading">Share</p>
         <div className="sp-share-row">
           <a href={`https://x.com/intent/tweet?url=${encoded}&text=${encodedTitle}`} target="_blank" rel="noopener noreferrer" aria-label="Share on X" className="sp-share-icon" data-platform="x"><IcoX /></a>

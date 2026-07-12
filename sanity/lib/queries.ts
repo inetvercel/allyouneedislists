@@ -94,6 +94,18 @@ export const getTopCategoriesQuery = groq`
   }
 `
 
+export const getAboutStatsQuery = groq`
+  {
+    "totalPosts": count(*[_type == "post" && !defined(redirectTo)]),
+    "totalCategories": count(*[_type == "category" && !defined(parent) && count(*[_type == "post" && !defined(redirectTo) && references(^._id)]) > 0]),
+    "categories": *[_type == "category" && !defined(parent) && count(*[_type == "post" && !defined(redirectTo) && references(^._id)]) > 0] | order(name asc) {
+      name,
+      "slug": slug.current,
+      "count": count(*[_type == "post" && !defined(redirectTo) && references(^._id)])
+    }
+  }
+`
+
 export const getNavCategoriesQuery = groq`
   *[_type == "category" && !defined(parent) && count(*[_type == "post" && references(^._id)]) > 0] | order(name asc) [0...8] {
     _id,

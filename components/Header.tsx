@@ -2,10 +2,11 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, Menu, X, Search } from 'lucide-react'
+import { ChevronDown, Menu, X, Search, ArrowUpRight } from 'lucide-react'
 import { client } from '@/sanity/lib/client'
+import SearchOverlay from './SearchOverlay'
+import { LogoMark } from './Logo'
 
 type NavChild = { label: string; href: string }
 type NavItem = { label: string; href: string; slug: string; children?: NavChild[] }
@@ -67,7 +68,20 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null)
   const [NAV, setNAV] = useState<NavItem[]>(ALL_NAV)
+  const [searchOpen, setSearchOpen] = useState(false)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ⌘K / Ctrl+K shortcut to open search
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   // Fetch only categories that have posts
   useEffect(() => {
@@ -95,53 +109,49 @@ export default function Header() {
     href === '/' ? pathname === '/' : pathname?.startsWith(href) ?? false
 
   return (
-    <header className="bg-[#111111] sticky top-0 z-50 border-b border-white/[0.07]">
-      <div className="max-w-[1380px] mx-auto px-4 lg:px-6">
-        <div className="flex items-center h-[48px] gap-0">
+    <>
+      {/* Floating glassmorphic pill nav */}
+      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] max-w-[1180px]">
+        <div className="flex items-center h-[58px] px-2.5 gap-1 rounded-full bg-[#161616]/85 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
 
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 flex items-center mr-5">
-            <span className="flex items-center bg-white px-2 py-1">
-              <Image
-                src="https://cdn.sanity.io/images/1z2ohlkj/production/fac14359f6d086b9c7df3f474e9aa22b09f53719-1585x527.png"
-                alt="All You Need Is Lists"
-                width={160}
-                height={53}
-                className="h-[28px] w-auto object-contain"
-                priority
-              />
+          <Link href="/" className="flex-shrink-0 flex items-center gap-2.5 pl-2 pr-3">
+            <LogoMark size={32} />
+            <span className="hidden sm:block text-[16px] font-extrabold tracking-tight whitespace-nowrap leading-none">
+              <span className="text-white">AllYouNeedIs</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E63946] to-[#ff8a5c]">Lists</span>
             </span>
           </Link>
 
-          {/* Desktop Nav — flat ALL CAPS links, no rounded backgrounds */}
-          <nav className="hidden lg:flex items-center flex-1 min-w-0 h-full">
+          <div className="w-px h-6 bg-white/[0.08] flex-shrink-0" />
+
+          {/* Desktop Nav — pill items */}
+          <nav className="hidden lg:flex items-center flex-1 min-w-0 gap-0.5 px-1">
             {NAV.map((item) => {
               const active = isActive(item.href)
               return (
                 <div
                   key={item.label}
-                  className="relative h-full flex items-center"
+                  className="relative flex items-center"
                   onMouseEnter={() => item.children && openDropdown(item.label)}
                   onMouseLeave={() => item.children && scheduleClose()}
                 >
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-0.5 px-3 h-full text-[11px] font-bold uppercase tracking-[0.07em] transition-colors duration-100 border-b-2 ${
+                    className={`flex items-center gap-1 px-3.5 py-2 rounded-full text-[12.5px] font-semibold tracking-tight transition-all duration-150 whitespace-nowrap ${
                       active
-                        ? 'text-white border-[#E63946]'
-                        : 'text-gray-400 hover:text-white border-transparent hover:border-white/20'
+                        ? 'text-white bg-white/[0.1]'
+                        : 'text-gray-400 hover:text-white hover:bg-white/[0.06]'
                     }`}
                   >
                     {item.label}
-                    {item.children && (
-                      <ChevronDown size={9} className="ml-0.5 opacity-50 mt-px" />
-                    )}
+                    {item.children && <ChevronDown size={10} className="opacity-50" />}
                   </Link>
 
                   {/* Dropdown */}
                   {item.children && (
                     <div
-                      className={`absolute top-full left-0 pt-0 transition-all duration-[140ms] ease-out ${
+                      className={`absolute top-[calc(100%+10px)] left-0 transition-all duration-[160ms] ease-out ${
                         activeDropdown === item.label
                           ? 'opacity-100 translate-y-0 pointer-events-auto'
                           : 'opacity-0 -translate-y-1 pointer-events-none'
@@ -149,20 +159,20 @@ export default function Header() {
                       onMouseEnter={() => openDropdown(item.label)}
                       onMouseLeave={scheduleClose}
                     >
-                      <div className="bg-[#1a1a1a] border border-white/[0.1] border-t-2 border-t-[#E63946] shadow-2xl shadow-black/80 min-w-[180px]">
-                        <div className="py-1">
+                      <div className="bg-[#181818]/95 backdrop-blur-xl border border-white/[0.1] rounded-2xl shadow-2xl shadow-black/60 overflow-hidden min-w-[190px]">
+                        <div className="py-2 px-2">
                           <Link
                             href={item.href}
-                            className="flex items-center px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#E63946] transition-colors"
+                            className="flex items-center px-3 py-2 mb-1 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#E63946] rounded-xl transition-colors"
                           >
                             All {item.label} →
                           </Link>
-                          <div className="h-px bg-white/[0.06] mx-3 mb-1" />
+                          <div className="h-px bg-white/[0.06] mx-2 mb-1" />
                           {item.children.map((child) => (
                             <Link
                               key={child.label}
                               href={child.href}
-                              className="flex items-center px-4 py-2 text-[12px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+                              className="flex items-center px-3 py-2 text-[13px] font-medium text-gray-300 hover:text-white hover:bg-white/[0.07] rounded-xl transition-all"
                             >
                               {child.label}
                             </Link>
@@ -177,37 +187,29 @@ export default function Header() {
           </nav>
 
           {/* Right side */}
-          <div className="hidden lg:flex items-center gap-0 ml-auto flex-shrink-0 h-full">
-            <Link
-              href="/contact"
-              className="flex items-center px-3 h-full text-[11px] font-black uppercase tracking-[0.07em] text-[#E63946] hover:text-red-400 transition-colors"
-            >
-              Get Listed
-            </Link>
-            <div className="w-px h-4 bg-white/[0.12] mx-1" />
-            <Link
-              href="/search"
-              className="flex items-center justify-center w-9 h-full text-gray-400 hover:text-white transition-colors"
+          <div className="hidden lg:flex items-center gap-1.5 ml-auto flex-shrink-0 pr-1">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-full text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all"
               aria-label="Search"
             >
               <Search size={15} />
-            </Link>
-            <div className="w-px h-4 bg-white/[0.12] mx-1" />
+            </button>
             <Link
-              href="/about"
-              className="flex items-center px-3 h-full text-[11px] font-bold uppercase tracking-[0.07em] text-gray-400 hover:text-white transition-colors"
+              href="/contact"
+              className="flex items-center gap-1.5 pl-3.5 pr-4 py-2 rounded-full bg-gradient-to-r from-[#E63946] to-[#ff6b5c] text-white text-[12.5px] font-bold tracking-tight hover:shadow-[0_4px_16px_rgba(230,57,70,0.5)] transition-shadow whitespace-nowrap"
             >
-              About
+              Get Listed <ArrowUpRight size={13} />
             </Link>
           </div>
 
           {/* Mobile: Search + Hamburger */}
-          <div className="lg:hidden ml-auto flex items-center gap-1">
-            <Link href="/search" className="flex items-center justify-center w-9 h-9 text-gray-400 hover:text-white transition-colors" aria-label="Search">
+          <div className="lg:hidden ml-auto flex items-center gap-1 pr-1">
+            <button onClick={() => setSearchOpen(true)} className="flex items-center justify-center w-9 h-9 rounded-full text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all" aria-label="Search">
               <Search size={16} />
-            </Link>
+            </button>
             <button
-              className="flex items-center justify-center w-9 h-9 text-gray-300 hover:text-white transition-colors"
+              className="flex items-center justify-center w-9 h-9 rounded-full text-gray-300 hover:text-white hover:bg-white/[0.08] transition-all"
               onClick={() => { setMobileOpen(!mobileOpen); if (mobileOpen) setExpandedMobile(null) }}
               aria-label="Toggle menu"
             >
@@ -215,83 +217,84 @@ export default function Header() {
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile menu */}
-      <div
-        className={`lg:hidden overflow-hidden transition-all duration-200 ease-in-out ${
-          mobileOpen ? 'max-h-[90vh] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="bg-[#0f0f0f] border-t border-white/[0.07] px-4 py-3 overflow-y-auto max-h-[90vh]">
-          <Link
-            href="/search"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 px-4 py-2.5 mb-2 bg-white/[0.04] border border-white/[0.07] text-gray-400 hover:text-white transition-colors"
-          >
-            <Search size={14} />
-            <span className="text-xs font-medium uppercase tracking-widest">Search lists…</span>
-          </Link>
+        {/* Mobile menu — floats below the pill */}
+        <div
+          className={`lg:hidden overflow-hidden transition-all duration-200 ease-in-out ${
+            mobileOpen ? 'max-h-[75vh] opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'
+          }`}
+        >
+          <div className="bg-[#161616]/95 backdrop-blur-xl border border-white/[0.08] rounded-3xl shadow-2xl shadow-black/50 px-3 py-3 overflow-y-auto max-h-[75vh]">
+            <button
+              onClick={() => { setMobileOpen(false); setSearchOpen(true) }}
+              className="w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-2xl bg-white/[0.05] border border-white/[0.07] text-gray-400 hover:text-white transition-colors"
+            >
+              <Search size={14} />
+              <span className="text-xs font-medium uppercase tracking-widest">Search lists…</span>
+            </button>
 
-          <div className="space-y-0">
-            {[{ label: 'Latest', href: '/' }, { label: 'About', href: '/about' }, { label: 'Get Listed', href: '/contact' }].map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-colors ${
-                  isActive(item.href) ? 'text-[#E63946]' : 'text-gray-300 hover:text-white'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            <div className="space-y-0.5">
+              {[{ label: 'Latest', href: '/' }, { label: 'About', href: '/about' }, { label: 'Get Listed', href: '/contact' }].map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-colors ${
+                    isActive(item.href) ? 'text-[#E63946] bg-white/[0.05]' : 'text-gray-300 hover:text-white hover:bg-white/[0.05]'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
 
-            <div className="h-px bg-white/[0.06] my-2" />
+              <div className="h-px bg-white/[0.07] my-2 mx-2" />
 
-            {NAV.map((item) => (
-              <div key={item.label}>
-                {item.children ? (
-                  <>
-                    <button
-                      onClick={() => setExpandedMobile(expandedMobile === item.label ? null : item.label)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-black uppercase tracking-widest text-gray-300 hover:text-white transition-colors"
-                    >
-                      <span className={isActive(item.href) ? 'text-[#E63946]' : ''}>{item.label}</span>
-                      <ChevronDown
-                        size={12}
-                        className={`text-gray-600 transition-transform duration-150 ${expandedMobile === item.label ? 'rotate-180 text-[#E63946]' : ''}`}
-                      />
-                    </button>
-                    <div className={`overflow-hidden transition-all duration-150 ${expandedMobile === item.label ? 'max-h-64' : 'max-h-0'}`}>
-                      <div className="ml-4 mb-1 border-l border-white/[0.08]">
-                        <Link href={item.href} onClick={() => setMobileOpen(false)}
-                          className="flex items-center px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-[#E63946] transition-colors">
-                          All {item.label} →
-                        </Link>
-                        {item.children.map((child) => (
-                          <Link key={child.label} href={child.href} onClick={() => setMobileOpen(false)}
-                            className="flex items-center px-4 py-2 text-xs text-gray-500 hover:text-white transition-colors">
-                            {child.label}
+              {NAV.map((item) => (
+                <div key={item.label}>
+                  {item.children ? (
+                    <>
+                      <button
+                        onClick={() => setExpandedMobile(expandedMobile === item.label ? null : item.label)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest text-gray-300 hover:text-white hover:bg-white/[0.05] transition-colors"
+                      >
+                        <span className={isActive(item.href) ? 'text-[#E63946]' : ''}>{item.label}</span>
+                        <ChevronDown
+                          size={12}
+                          className={`text-gray-600 transition-transform duration-150 ${expandedMobile === item.label ? 'rotate-180 text-[#E63946]' : ''}`}
+                        />
+                      </button>
+                      <div className={`overflow-hidden transition-all duration-150 ${expandedMobile === item.label ? 'max-h-64' : 'max-h-0'}`}>
+                        <div className="ml-4 mb-1 pl-3 border-l border-white/[0.08]">
+                          <Link href={item.href} onClick={() => setMobileOpen(false)}
+                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-[#E63946] rounded-xl transition-colors">
+                            All {item.label} →
                           </Link>
-                        ))}
+                          {item.children.map((child) => (
+                            <Link key={child.label} href={child.href} onClick={() => setMobileOpen(false)}
+                              className="flex items-center px-3 py-2 text-xs text-gray-500 hover:text-white rounded-xl transition-colors">
+                              {child.label}
+                            </Link>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </>
-                ) : (
-                  <Link href={item.href} onClick={() => setMobileOpen(false)}
-                    className={`flex items-center px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-colors ${
-                      isActive(item.href) ? 'text-[#E63946]' : 'text-gray-300 hover:text-white'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                )}
-              </div>
-            ))}
+                    </>
+                  ) : (
+                    <Link href={item.href} onClick={() => setMobileOpen(false)}
+                      className={`flex items-center px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-colors ${
+                        isActive(item.href) ? 'text-[#E63946] bg-white/[0.05]' : 'text-gray-300 hover:text-white hover:bg-white/[0.05]'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+    </>
   )
 }

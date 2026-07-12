@@ -16,7 +16,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <>
       <Header />
-      <main className="min-h-screen">{children}</main>
+      <main className="min-h-screen pt-[90px]">{children}</main>
       <Footer />
     </>
   )

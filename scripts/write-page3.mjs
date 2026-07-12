@@ -1,4 +1,6 @@
-import type { Metadata } from 'next'
+import { writeFileSync } from 'fs'
+
+const content = `import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Eye } from 'lucide-react'
@@ -9,8 +11,8 @@ import {
   getHomepageSectionsQuery,
 } from '@/sanity/lib/queries'
 import { urlFor } from '@/sanity/lib/image'
+import PostCard from '@/components/PostCard'
 import Pagination from '@/components/Pagination'
-import DarkCard, { catColor, fmtDate as fmt, stripHtml as strip } from '@/components/DarkCard'
 import type { PostCard as PostCardType } from '@/types'
 
 const PER_PAGE = 18
@@ -19,6 +21,25 @@ const W = 'max-w-[1380px]'
 export const metadata: Metadata = {
   title: 'All You Need Is Lists — The Best Curated Lists on the Internet',
   description: 'Discover top 10s, best-of lists and expert picks across AI, tech, business, entertainment, travel and more.',
+}
+
+function fmt(d: string) {
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+function strip(h: string) { return h.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').trim() }
+
+const CAT_COLORS: Record<string, string> = {
+  technology: '#38bdf8',
+  business: '#fbbf24',
+  entertainment: '#f472b6',
+  ai: '#4ade80',
+  lifestyle: '#a78bfa',
+  travel: '#2dd4bf',
+  statistics: '#fb923c',
+  directories: '#60a5fa',
+}
+function catColor(slug?: string) {
+  return CAT_COLORS[slug || ''] || '#E63946'
 }
 
 // ── Section header ─────────────────────────────────────────────────────────────
@@ -33,9 +54,49 @@ function SectionHead({ label, href }: { label: string; href: string }) {
   )
 }
 
+// ── DarkCard — rounded, glass badge, hover lift + zoom ─────────────────────────
+function DarkCard({ post, size = 'md' }: { post: PostCardType; size?: 'lg' | 'md' | 'sm' }) {
+  const href  = post.fullPath || \`/\${post.slug}\`
+  const cat   = post.categories?.[0]
+  const color = catColor(cat?.slug)
+  const w     = size === 'lg' ? 900 : size === 'md' ? 600 : 400
+  const h     = size === 'lg' ? 600 : size === 'md' ? 400 : 266
+  const img   = post.featuredImage?.asset ? urlFor(post.featuredImage).width(w).height(h).fit('crop').url() : null
+  return (
+    <Link href={href} className="group flex flex-col h-full bg-[#1a1a1a] rounded-2xl overflow-hidden border border-white/[0.06] hover:border-white/[0.14] hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/40 transition-all duration-300">
+      <div className="relative overflow-hidden" style={{ aspectRatio: '3/2' }}>
+        {img
+          ? <Image src={img} alt={post.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" priority={size === 'lg'} />
+          : <div className="absolute inset-0 bg-[#262626]" />}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        {cat && (
+          <span
+            className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider text-white backdrop-blur-md shadow-lg"
+            style={{ backgroundColor: \`\${color}dd\` }}
+          >
+            {cat.name}
+          </span>
+        )}
+      </div>
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className={\`text-white font-bold leading-snug group-hover:text-gray-200 transition-colors \${
+          size === 'lg' ? 'text-[1.3rem] md:text-[1.55rem]' : size === 'sm' ? 'text-[0.88rem]' : 'text-[1.02rem]'
+        }\`}>{post.title}</h3>
+        {post.excerpt && size !== 'sm' && (
+          <p className="text-gray-400 text-[12.5px] leading-relaxed mt-2 line-clamp-2">{strip(post.excerpt)}</p>
+        )}
+        <div className="flex items-center gap-2 text-gray-500 text-[10.5px] font-semibold mt-auto pt-3">
+          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          <time>{fmt(post.date)}</time>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 // ── HorizontalStory — rounded, text left / image right ────────────────────────
 function HorizontalStory({ post }: { post: PostCardType }) {
-  const href  = post.fullPath || `/${post.slug}`
+  const href  = post.fullPath || \`/\${post.slug}\`
   const cat   = post.categories?.[0]
   const color = catColor(cat?.slug)
   const img   = post.featuredImage?.asset ? urlFor(post.featuredImage).width(220).height(160).fit('crop').url() : null
@@ -58,7 +119,7 @@ function HorizontalStory({ post }: { post: PostCardType }) {
 
 // ── HeroRow — compact rounded row ──────────────────────────────────────────────
 function HeroRow({ post }: { post: PostCardType }) {
-  const href  = post.fullPath || `/${post.slug}`
+  const href  = post.fullPath || \`/\${post.slug}\`
   const cat   = post.categories?.[0]
   const color = catColor(cat?.slug)
   const img   = post.featuredImage?.asset ? urlFor(post.featuredImage).width(90).height(64).fit('crop').url() : null
@@ -85,7 +146,7 @@ function MostReadBox({ posts }: { posts: PostCardType[] }) {
       </div>
       <div className="px-4 pb-4">
         {posts.map((p, i) => {
-          const href = p.fullPath || `/${p.slug}`
+          const href = p.fullPath || \`/\${p.slug}\`
           return (
             <Link key={p._id} href={href} className="group flex gap-3 items-start py-2.5 border-t border-white/[0.06] first:border-0">
               <span className="text-[13px] font-black text-[#4ade80] w-4 flex-shrink-0 tabular-nums">{i + 1}</span>
@@ -110,14 +171,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       client.fetch(getLatestPostsCountQuery, {}, { next: { revalidate: 300 } }).catch(() => 0),
     ])
     return (
-      <div className={`${W} mx-auto px-4 py-2`}>
-        <div className="relative overflow-hidden rounded-3xl bg-[#151515] border border-white/[0.06] shadow-2xl shadow-black/30 px-6 md:px-10 py-9 md:py-11 mb-8">
-          <div className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full opacity-[0.12] blur-3xl pointer-events-none bg-[#E63946]" />
-          <span className="relative text-[10px] font-black uppercase tracking-widest text-[#E63946] mb-3 block">Browse</span>
-          <h1 className="relative text-2xl md:text-4xl font-black text-white leading-tight">All Lists — Page {page}</h1>
+      <div className={\`\${W} mx-auto px-4 py-10\`}>
+        <div className="border-b border-gray-300 pb-3 mb-7">
+          <h2 className="text-sm font-black uppercase tracking-widest text-gray-900">All Lists — Page {page}</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-6">
-          {posts.map((post: PostCardType) => <DarkCard key={post._id} post={post} />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {posts.map((post: PostCardType) => <PostCard key={post._id} post={post} />)}
         </div>
         <Pagination currentPage={page} totalPages={Math.ceil(total / PER_PAGE)} basePath="/" />
       </div>
@@ -139,7 +198,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const featColor = catColor(heroFeat?.categories?.[0]?.slug)
 
   return (
-    <div className={`${W} mx-auto px-4 py-6`}>
+    <div className={\`\${W} mx-auto px-4 py-6\`}>
 
       {/* TOP 3-COL GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -152,11 +211,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           {heroRows.map(p => <HeroRow key={p._id} post={p} />)}
         </div>
         {heroFeat && (
-          <Link href={heroFeat.fullPath || `/${heroFeat.slug}`} className="group relative block overflow-hidden rounded-2xl border border-white/[0.06] hover:border-white/[0.14] hover:shadow-2xl hover:shadow-black/40 transition-all duration-300" style={{ minHeight: '320px' }}>
+          <Link href={heroFeat.fullPath || \`/\${heroFeat.slug}\`} className="group relative block overflow-hidden rounded-2xl border border-white/[0.06] hover:border-white/[0.14] hover:shadow-2xl hover:shadow-black/40 transition-all duration-300" style={{ minHeight: '320px' }}>
             {heroFeat.featuredImage?.asset
               ? <Image src={urlFor(heroFeat.featuredImage).width(1000).height(650).fit('crop').url()} alt={heroFeat.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" priority />
               : <div className="absolute inset-0 bg-[#262626]" />}
-            <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider text-white backdrop-blur-md shadow-lg" style={{ backgroundColor: `${featColor}dd` }}>
+            <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider text-white backdrop-blur-md shadow-lg" style={{ backgroundColor: \`\${featColor}dd\` }}>
               Featured
             </span>
             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
@@ -256,12 +315,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             { slug: 'lifestyle',     name: 'Lifestyle',     emoji: '🌿' },
             { slug: 'travel',        name: 'Travel',        emoji: '✈️' },
           ].map(c => (
-            <Link key={c.slug} href={`/category/${c.slug}`}
+            <Link key={c.slug} href={\`/category/\${c.slug}\`}
               className="flex flex-col items-center gap-2 py-5 px-3 rounded-2xl bg-[#1a1a1a] border border-white/[0.06] hover:border-white/[0.14] hover:-translate-y-1 transition-all duration-200 text-center group"
             >
               <span
                 className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
-                style={{ backgroundColor: `${catColor(c.slug)}22` }}
+                style={{ backgroundColor: \`\${catColor(c.slug)}22\` }}
               >
                 {c.emoji}
               </span>
@@ -279,3 +338,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     </div>
   )
 }
+`
+
+writeFileSync('app/page.tsx', content)
+console.log('Written', content.length, 'chars')

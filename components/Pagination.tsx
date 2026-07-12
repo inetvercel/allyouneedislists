@@ -21,11 +21,11 @@ export default function Pagination({ currentPage, totalPages, basePath }: Pagina
     page === 1 ? basePath : `${basePath}?page=${page}`
 
   return (
-    <nav className="flex items-center justify-center gap-1 mt-10" aria-label="Pagination">
+    <nav className="flex items-center justify-center gap-1.5 mt-10" aria-label="Pagination">
       {currentPage > 1 && (
         <Link
           href={getHref(currentPage - 1)}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-1 px-3.5 py-2 rounded-full text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all"
         >
           <ChevronLeft size={16} />
           Prev
@@ -34,7 +34,7 @@ export default function Pagination({ currentPage, totalPages, basePath }: Pagina
 
       {pages[0] > 1 && (
         <>
-          <Link href={getHref(1)} className="w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors">
+          <Link href={getHref(1)} className="w-9 h-9 flex items-center justify-center rounded-full text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all">
             1
           </Link>
           {pages[0] > 2 && <span className="px-1 text-gray-400">…</span>}
@@ -45,10 +45,10 @@ export default function Pagination({ currentPage, totalPages, basePath }: Pagina
         <Link
           key={page}
           href={getHref(page)}
-          className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+          className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-bold transition-all ${
             page === currentPage
-              ? 'bg-brand-red text-white'
-              : 'text-gray-600 hover:bg-gray-200'
+              ? 'bg-gradient-to-r from-[#E63946] to-[#ff8a5c] text-white shadow-[0_3px_12px_rgba(230,57,70,0.4)]'
+              : 'text-gray-600 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md'
           }`}
           aria-current={page === currentPage ? 'page' : undefined}
         >
@@ -59,7 +59,7 @@ export default function Pagination({ currentPage, totalPages, basePath }: Pagina
       {pages[pages.length - 1] < totalPages && (
         <>
           {pages[pages.length - 1] < totalPages - 1 && <span className="px-1 text-gray-400">…</span>}
-          <Link href={getHref(totalPages)} className="w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors">
+          <Link href={getHref(totalPages)} className="w-9 h-9 flex items-center justify-center rounded-full text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all">
             {totalPages}
           </Link>
         </>
@@ -68,7 +68,7 @@ export default function Pagination({ currentPage, totalPages, basePath }: Pagina
       {currentPage < totalPages && (
         <Link
           href={getHref(currentPage + 1)}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-1 px-3.5 py-2 rounded-full text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all"
         >
           Next
           <ChevronRight size={16} />

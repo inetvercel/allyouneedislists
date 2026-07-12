@@ -19,9 +19,24 @@ import { injectAffiliateLinks } from '@/lib/affiliates'
 import TableOfContents from '@/components/TableOfContents'
 import SidebarPanel from '@/components/SidebarPanel'
 import HelpfulWidget from '@/components/HelpfulWidget'
+import { LogoMark } from '@/components/Logo'
 import type { PostFull, Category } from '@/types'
 
 const PER_PAGE = 18
+
+const CAT_COLORS: Record<string, string> = {
+  technology: '#38bdf8',
+  business: '#fbbf24',
+  entertainment: '#f472b6',
+  ai: '#4ade80',
+  lifestyle: '#a78bfa',
+  travel: '#2dd4bf',
+  statistics: '#fb923c',
+  directories: '#60a5fa',
+}
+function catColor(slug?: string) {
+  return CAT_COLORS[slug || ''] || '#E63946'
+}
 
 function extractFaqs(html: string): { q: string; a: string }[] {
   const faqs: { q: string; a: string }[] = []
@@ -375,80 +390,90 @@ export default async function SlugPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
 
-        {/* ── DARK ARTICLE HEADER (Ars Technica style) ───────────────────────── */}
-        <div className="bg-[#0c0c0c]">
-          <div className="max-w-[1380px] mx-auto px-4 lg:px-8">
+        {/* ── FLOATING MODERN HERO ─────────────────────────────────────────────── */}
+        <div className="max-w-[1380px] mx-auto px-4 lg:px-8 pt-2">
+          <div className="relative overflow-hidden rounded-3xl bg-[#151515] border border-white/[0.06] shadow-2xl shadow-black/30">
+            {/* Ambient category-colored glow */}
+            <div
+              className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full opacity-[0.15] blur-3xl pointer-events-none"
+              style={{ backgroundColor: catColor(post.categories?.[0]?.slug) }}
+            />
 
-            {/* Breadcrumb */}
-            <nav className="flex items-center gap-1.5 text-xs text-gray-500 pt-5 pb-4 flex-wrap">
-              {breadcrumbs.map((crumb, i) => (
-                <span key={i} className="flex items-center gap-1.5">
-                  {i < breadcrumbs.length - 1 ? (
-                    <>
-                      <Link href={crumb.href} className="hover:text-gray-300 transition-colors">{crumb.label}</Link>
-                      <ChevronRight size={11} className="text-gray-700" />
-                    </>
-                  ) : (
-                    <span className="text-gray-600 line-clamp-1">{crumb.label}</span>
-                  )}
-                </span>
-              ))}
-            </nav>
+            <div className="relative px-5 md:px-8 lg:px-10 pt-6 pb-8 lg:pb-10">
+              {/* Breadcrumb */}
+              <nav className="flex items-center gap-1.5 text-xs text-gray-500 pb-5 flex-wrap">
+                {breadcrumbs.map((crumb, i) => (
+                  <span key={i} className="flex items-center gap-1.5">
+                    {i < breadcrumbs.length - 1 ? (
+                      <>
+                        <Link href={crumb.href} className="hover:text-gray-300 transition-colors">{crumb.label}</Link>
+                        <ChevronRight size={11} className="text-gray-700" />
+                      </>
+                    ) : (
+                      <span className="text-gray-600 line-clamp-1">{crumb.label}</span>
+                    )}
+                  </span>
+                ))}
+              </nav>
 
-            {/* Refreshed banner */}
-            {post.originalPath && (
-              <div className="flex items-center gap-2 mb-4 text-xs text-amber-400 bg-amber-900/20 border border-amber-800/40 rounded-lg px-4 py-2.5">
-                <span>🔄</span>
-                <span>Updated from <span className="font-semibold">&ldquo;{post.originalTitle || post.originalPath}&rdquo;</span></span>
-              </div>
-            )}
-
-            {/* Split: title (left) + image (right) */}
-            <div className={`grid gap-6 lg:gap-10 pb-8 items-end ${imageUrl ? 'grid-cols-1 lg:grid-cols-[1fr_460px]' : 'grid-cols-1 max-w-3xl'}`}>
-
-              {/* Left: categories + title + meta */}
-              <div className="py-2 lg:py-6">
-                {post.categories && post.categories.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {post.categories.map((cat) => (
-                      <Link key={cat._id} href={`/category/${cat.slug}`}
-                        className="text-[10px] font-black uppercase tracking-widest text-[#E63946] bg-[#E63946]/10 hover:bg-[#E63946] hover:text-white px-2.5 py-1 rounded-sm transition-colors">
-                        {cat.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                <h1 className="text-3xl md:text-4xl lg:text-[2.8rem] font-black text-white leading-tight mb-5">
-                  {post.title}
-                </h1>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar size={13} className="text-gray-500" />
-                    <time dateTime={post.date}>{formatDate(post.date)}</time>
-                  </div>
-                  <span className="text-gray-700">·</span>
-                  <span>{readingTime} min read</span>
-                  {freshnessDate && (
-                    <>
-                      <span className="text-gray-700">·</span>
-                      <span className="text-green-400 text-xs font-bold">Updated {formatMonthYear(freshnessDate)}</span>
-                    </>
-                  )}
-                  <span className="text-gray-700">·</span>
-                  <Link href="/contact"
-                    className="text-[10px] font-black uppercase tracking-widest text-[#E63946] hover:text-red-400 transition-colors">
-                    Get Listed
-                  </Link>
+              {/* Refreshed banner */}
+              {post.originalPath && (
+                <div className="flex items-center gap-2 mb-4 text-xs text-amber-400 bg-amber-900/20 border border-amber-800/40 rounded-2xl px-4 py-2.5">
+                  <span>🔄</span>
+                  <span>Updated from <span className="font-semibold">&ldquo;{post.originalTitle || post.originalPath}&rdquo;</span></span>
                 </div>
-              </div>
+              )}
+
+              {/* Split: title (left) + image (right) */}
+              <div className={`grid gap-7 lg:gap-10 items-center ${imageUrl ? 'grid-cols-1 lg:grid-cols-[1fr_440px]' : 'grid-cols-1 max-w-3xl'}`}>
+
+                {/* Left: categories + title + meta */}
+                <div>
+                  {post.categories && post.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {post.categories.map((cat) => {
+                        const color = catColor(cat.slug)
+                        return (
+                          <Link key={cat._id} href={`/category/${cat.slug}`}
+                            className="text-[10px] font-black uppercase tracking-widest text-white px-2.5 py-1 rounded-full shadow-lg transition-opacity hover:opacity-80"
+                            style={{ backgroundColor: color, boxShadow: `0 3px 12px ${color}55` }}>
+                            {cat.name}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <h1 className="text-3xl md:text-4xl lg:text-[2.7rem] font-black text-white leading-[1.1] mb-5">
+                    {post.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] text-gray-300 font-semibold">
+                      <Calendar size={12} className="text-gray-500" />
+                      <time dateTime={post.date}>{formatDate(post.date)}</time>
+                    </span>
+                    <span className="px-3 py-1.5 rounded-full bg-white/[0.06] text-gray-300 font-semibold">
+                      {readingTime} min read
+                    </span>
+                    {freshnessDate && (
+                      <span className="px-3 py-1.5 rounded-full bg-[#4ade80]/10 text-[#4ade80] font-bold">
+                        Updated {formatMonthYear(freshnessDate)}
+                      </span>
+                    )}
+                    <Link href="/contact"
+                      className="px-3 py-1.5 rounded-full bg-gradient-to-r from-[#E63946] to-[#ff8a5c] text-white font-bold hover:shadow-[0_4px_16px_rgba(230,57,70,0.5)] transition-shadow">
+                      Get Listed
+                    </Link>
+                  </div>
+                </div>
 
               {/* Right: featured image */}
               {imageUrl && (
-                <div className="relative rounded-xl overflow-hidden shadow-2xl shadow-black/60" style={{ aspectRatio: '16/9' }}>
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/60" style={{ aspectRatio: '16/9' }}>
                   <Image src={imageUrl} alt={post.featuredImage?.alt || post.title} fill
                     className="object-cover" priority />
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>
@@ -475,14 +500,14 @@ export default async function SlugPage({
 
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
-          <div className="mt-10 pt-6 border-t border-gray-100">
+          <div className="mt-10 pt-6 border-t border-gray-300">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Tags:</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Tags:</span>
               {post.tags.map((tag) => (
                 <Link
                   key={tag._id}
                   href={`/tag/${tag.slug}`}
-                  className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full hover:bg-brand-red hover:text-white transition-colors"
+                  className="text-xs bg-white text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full hover:bg-[#E63946] hover:text-white hover:border-[#E63946] transition-colors"
                 >
                   {tag.name}
                 </Link>
@@ -492,10 +517,8 @@ export default async function SlugPage({
         )}
 
         {/* Author box */}
-        <div className="mt-10 pt-6 border-t border-gray-100 flex items-start gap-4">
-          <div className="w-11 h-11 rounded-full bg-[#E63946] flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-black text-sm">AY</span>
-          </div>
+        <div className="mt-10 pt-6 border-t border-gray-300 flex items-start gap-4">
+          <LogoMark size={44} />
           <div>
             <p className="font-bold text-sm text-gray-900">AYNIL Editorial Team</p>
             <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
@@ -511,7 +534,7 @@ export default async function SlugPage({
         {relatedPosts.length > 0 && (
           <section className="mt-16">
             <div className="flex items-center gap-3 mb-6">
-              <div className="h-1 w-8 bg-brand-red rounded-full" />
+              <div className="h-1 w-8 bg-gradient-to-r from-[#E63946] to-[#ff8a5c] rounded-full" />
               <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500">You Might Also Like</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -552,14 +575,17 @@ export default async function SlugPage({
 
     const totalPages = Math.ceil(total / PER_PAGE)
 
+    const catAccent = catColor(category.slug)
+
     return (
-      <div className="max-w-7xl mx-auto px-4 py-10">
+      <div className="max-w-[1380px] mx-auto px-4 py-10">
         {/* Category header */}
         <div className="mb-10">
           {category.parent && (
             <Link
               href={`/category/${category.parent.slug}`}
-              className="text-xs font-bold uppercase tracking-widest text-brand-red hover:text-red-700 mb-2 inline-block"
+              className="text-xs font-bold uppercase tracking-widest hover:opacity-75 mb-2 inline-block transition-opacity"
+              style={{ color: catAccent }}
             >
               {category.parent.name}
             </Link>
@@ -570,7 +596,10 @@ export default async function SlugPage({
           {category.description && (
             <p className="text-gray-500 max-w-2xl">{category.description}</p>
           )}
-          <p className="text-sm text-gray-400 mt-2">{total} lists</p>
+          <div className="flex items-center gap-2 mt-3">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: catAccent }} />
+            <p className="text-sm text-gray-400">{total} lists</p>
+          </div>
         </div>
 
         {categoryPosts.length === 0 ? (
@@ -579,7 +608,7 @@ export default async function SlugPage({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {categoryPosts.map((p: Parameters<typeof PostCard>[0]['post']) => (
                 <PostCard key={p._id} post={p} />
               ))}

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import Image from 'next/image'
+import { LogoMark } from './Logo'
 
 const BROWSE = [
   { label: 'AI & Tools',     href: '/category/ai' },
@@ -24,9 +24,22 @@ const COMPANY = [
   { label: 'Latest',      href: '/' },
 ]
 
+const CAT_COLORS: Record<string, string> = {
+  ai: '#4ade80',
+  technology: '#38bdf8',
+  business: '#fbbf24',
+  entertainment: '#f472b6',
+  lifestyle: '#a78bfa',
+  travel: '#2dd4bf',
+}
+function dotColor(href: string) {
+  const slug = href.split('/').pop() || ''
+  return CAT_COLORS[slug] || '#E63946'
+}
+
 function SocialX() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
     </svg>
   )
@@ -36,106 +49,116 @@ export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-[#0c0c0c] border-t border-white/[0.07] text-gray-400 mt-16">
+    <footer className="px-3 md:px-4 pb-4 mt-16">
+      <div className="max-w-[1380px] mx-auto relative overflow-hidden rounded-[32px] bg-[#111111] border border-white/[0.07] shadow-2xl shadow-black/30 text-gray-400">
 
-      {/* Main footer grid */}
-      <div className="max-w-[1380px] mx-auto px-4 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        {/* Ambient glow */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-[0.1] blur-3xl pointer-events-none" style={{ backgroundColor: '#E63946' }} />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full opacity-[0.08] blur-3xl pointer-events-none" style={{ backgroundColor: '#38bdf8' }} />
 
-          {/* Brand column */}
-          <div className="lg:col-span-1">
-            <Link href="/" className="inline-block mb-5">
-              <span className="flex items-center bg-white rounded-lg px-2.5 py-1.5 shadow-sm">
-                <Image
-                  src="https://cdn.sanity.io/images/1z2ohlkj/production/fac14359f6d086b9c7df3f474e9aa22b09f53719-1585x527.png"
-                  alt="All You Need Is Lists"
-                  width={180}
-                  height={60}
-                  className="h-8 w-auto object-contain"
-                />
-              </span>
-            </Link>
-            <p className="text-sm leading-relaxed mb-5 max-w-[220px]">
-              Your go-to destination for the best lists on the internet — top 5s, top 10s, and everything in between.
-            </p>
-            <div className="flex items-center gap-2">
-              <a
-                href="https://x.com/allyouneedislists"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Follow on X"
-                className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-[#E63946] text-gray-400 hover:text-white transition-all"
-              >
-                <SocialX />
-              </a>
+        {/* Newsletter banner */}
+        <div className="relative px-6 md:px-10 pt-9 md:pt-10 pb-8">
+          <div className="rounded-3xl bg-white/[0.04] border border-white/[0.06] px-6 md:px-9 py-7 md:py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h3 className="text-white text-xl md:text-2xl font-black mb-1.5">Never miss a great list</h3>
+              <p className="text-gray-400 text-sm">Fresh top 10s and curated picks, straight to your inbox.</p>
             </div>
-          </div>
-
-          {/* Browse categories */}
-          <div>
-            <h3 className="text-white text-[11px] font-black uppercase tracking-widest mb-4">Browse</h3>
-            <ul className="space-y-2.5">
-              {BROWSE.map(l => (
-                <li key={l.href}>
-                  <Link href={l.href} className="text-sm text-gray-400 hover:text-white transition-colors">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Popular lists */}
-          <div>
-            <h3 className="text-white text-[11px] font-black uppercase tracking-widest mb-4">Popular Lists</h3>
-            <ul className="space-y-2.5">
-              {POPULAR.map(l => (
-                <li key={l.label}>
-                  <Link href={l.href} className="text-sm text-gray-400 hover:text-white transition-colors">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company + newsletter */}
-          <div>
-            <h3 className="text-white text-[11px] font-black uppercase tracking-widest mb-4">Company</h3>
-            <ul className="space-y-2.5 mb-8">
-              {COMPANY.map(l => (
-                <li key={l.href}>
-                  <Link href={l.href} className="text-sm text-gray-400 hover:text-white transition-colors">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <h3 className="text-white text-[11px] font-black uppercase tracking-widest mb-3">Stay in the loop</h3>
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#E63946] hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors"
+              className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-[#E63946] to-[#ff8a5c] text-white text-sm font-bold hover:shadow-[0_6px_20px_rgba(230,57,70,0.5)] transition-shadow whitespace-nowrap"
             >
               Get in touch →
             </Link>
           </div>
-
         </div>
-      </div>
 
-      {/* Bottom bar */}
-      <div className="border-t border-white/[0.06]">
-        <div className="max-w-[1380px] mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
+        {/* Main footer grid */}
+        <div className="relative px-6 md:px-10 pb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr] gap-10">
+
+            {/* Brand column */}
+            <div>
+              <Link href="/" className="inline-flex items-center gap-2.5 mb-5">
+                <LogoMark size={32} />
+                <span className="text-[16px] font-extrabold tracking-tight leading-none">
+                  <span className="text-white">AllYouNeedIs</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E63946] to-[#ff8a5c]">Lists</span>
+                </span>
+              </Link>
+              <p className="text-sm leading-relaxed mb-5 max-w-[240px]">
+                Your go-to destination for the best lists on the internet — top 5s, top 10s, and everything in between.
+              </p>
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://x.com/allyouneedislists"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow on X"
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-white/[0.06] hover:bg-[#E63946] text-gray-400 hover:text-white transition-all"
+                >
+                  <SocialX />
+                </a>
+              </div>
+            </div>
+
+            {/* Browse categories */}
+            <div>
+              <h3 className="text-white text-[11px] font-black uppercase tracking-widest mb-4">Browse</h3>
+              <ul className="space-y-2.5">
+                {BROWSE.map(l => (
+                  <li key={l.href}>
+                    <Link href={l.href} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors group">
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: dotColor(l.href) }} />
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Popular lists */}
+            <div>
+              <h3 className="text-white text-[11px] font-black uppercase tracking-widest mb-4">Popular Lists</h3>
+              <ul className="space-y-2.5">
+                {POPULAR.map(l => (
+                  <li key={l.label}>
+                    <Link href={l.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h3 className="text-white text-[11px] font-black uppercase tracking-widest mb-4">Company</h3>
+              <ul className="space-y-2.5">
+                {COMPANY.map(l => (
+                  <li key={l.href}>
+                    <Link href={l.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="relative border-t border-white/[0.07] mx-6 md:mx-10" />
+        <div className="relative px-6 md:px-10 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
           <p>© {currentYear} All You Need Is Lists. All rights reserved.</p>
           <div className="flex items-center gap-5">
-            <Link href="/about" className="hover:text-gray-400 transition-colors">Privacy</Link>
-            <Link href="/about" className="hover:text-gray-400 transition-colors">Terms</Link>
+            <Link href="/privacy" className="hover:text-gray-400 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-gray-400 transition-colors">Terms</Link>
             <Link href="/contact" className="hover:text-gray-400 transition-colors">Contact</Link>
           </div>
         </div>
-      </div>
 
+      </div>
     </footer>
   )
 }
