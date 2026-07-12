@@ -717,8 +717,18 @@ async function processOneTopic(topic, category) {
   const relatedPosts = await findRelatedPosts(content.slug, categoryRefs)
   if (relatedPosts.length > 0) {
     content.content += buildRelatedHTML(relatedPosts)
-    console.log(`  🔗 ${relatedPosts.length} internal link(s) injected`)
   }
+
+  // 4b. Link audit — count external + inline internal links in the article body
+  const externalLinkMatches = [...(content.content.matchAll(/<a [^>]*href="https?:\/\/(?!allyouneedislists\.com)[^"]*"/gi))]
+  const internalLinkMatches = [...(content.content.matchAll(/<a [^>]*href="\/[^"]*"/gi))]
+  const externalCount = externalLinkMatches.length
+  const internalBodyCount = internalLinkMatches.length - (relatedPosts.length > 0 ? relatedPosts.length : 0)
+  const extIcon = externalCount >= 2 ? '✅' : '⚠️ '
+  const intIcon = internalBodyCount >= 1 ? '✅' : '⚠️ '
+  console.log(`  ${extIcon} External links in body: ${externalCount}${externalCount < 2 ? ' (Grok did not add enough — check prompt)' : ''}`)
+  console.log(`  ${intIcon} Inline internal links:  ${internalBodyCount}${internalBodyCount < 1 && relatedLinks.length > 0 ? ' (Grok skipped internal links — check prompt)' : ''}`)
+  if (relatedPosts.length > 0) console.log(`  🔗 ${relatedPosts.length} related-post link(s) appended`)
 
   // 5. Publish to Sanity
   const post = await createSanityPost({ content, featuredImage, categoryRefs, tagRefs, draft: isDraft })

@@ -420,6 +420,14 @@ async function main() {
     console.warn(`  ⚠️  Image failed: ${err.message} — continuing without`)
   }
 
+  // 2b. Link audit
+  const extMatches = [...(content.content.matchAll(/<a [^>]*href="https?:\/\/(?!allyouneedislists\.com)[^"]*"/gi))]
+  const intMatches = [...(content.content.matchAll(/<a [^>]*href="\/[^"]*"/gi))]
+  const extCount = extMatches.length
+  const intCount = intMatches.length
+  console.log(`  ${extCount >= 2 ? '✅' : '⚠️ '} External links in body: ${extCount}${extCount < 2 ? ' (not enough — check prompt)' : ''}`)
+  console.log(`  ${intCount >= 1 ? '✅' : '⚠️ '} Inline internal links:  ${intCount}`)
+
   // 3. Categories + tags
   const [categoryRefs, tagRefs] = await Promise.all([
     resolveCategoryRefs(content.suggestedCategory),
