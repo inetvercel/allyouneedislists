@@ -18,6 +18,7 @@ import Pagination from '@/components/Pagination'
 import { injectAffiliateLinks } from '@/lib/affiliates'
 import TableOfContents from '@/components/TableOfContents'
 import SidebarPanel from '@/components/SidebarPanel'
+import HelpfulWidget from '@/components/HelpfulWidget'
 import type { PostFull, Category } from '@/types'
 
 const PER_PAGE = 18
@@ -510,6 +511,9 @@ export default async function SlugPage({
           </div>
         </div>
 
+        {/* Was this helpful — after reading, not before */}
+        <HelpfulWidget />
+
         {/* Related posts */}
         {relatedPosts.length > 0 && (
           <section className="mt-16">
@@ -532,6 +536,7 @@ export default async function SlugPage({
           items={toc}
           title={post.title}
           url={`https://allyouneedislists.com${fullPath}`}
+          relatedPosts={relatedPosts}
         />
       </div>
     </div>
