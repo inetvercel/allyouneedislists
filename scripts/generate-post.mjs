@@ -499,17 +499,21 @@ IMAGE PLACEHOLDERS: After item 4 and after item 8, insert exactly this comment o
     : null
 
   const linkingRequirements = `
-LINKING REQUIREMENTS — MANDATORY, NOT OPTIONAL:
+⚠️  LINKING — THIS IS REQUIRED, NOT OPTIONAL. DO NOT SKIP.
 
-A) EXTERNAL LINKS — you MUST include 2 to 5 in the article body:
+A) EXTERNAL LINKS: embed 2–5 clickable HTML links INLINE inside paragraph text — NOT as footnotes, NOT as a reference list at the bottom.
+   • Format EXACTLY: <a href="https://example.com" target="_blank" rel="noopener noreferrer">descriptive anchor text</a>
+   • Spread across different sections — one link per paragraph maximum
+   • Anchor text describes the destination, e.g. "a 2026 Harvard study on loneliness" or "Meetup's official app"
 ${useGrok
-    ? '   Use ONLY real URLs you found during your web search — never fabricate. Spread them across different list items.'
-    : '   Use Wikipedia, official brand/product pages, .gov/.edu stats, or BBC/Reuters/Forbes.'}
-   Anchor text must be descriptive, e.g. <a href="https://..." target="_blank" rel="noopener noreferrer">according to the NHS</a>
+    ? '   • ONLY use URLs you actually visited during your web search — never invent a URL'
+    : '   • Good sources: Wikipedia, official brand pages, .gov/.edu, BBC/Reuters/Forbes'}
 
-B) INTERNAL LINKS — ${internalLinkCandidates
-    ? `you MUST include exactly 2 from the list below (only where naturally relevant):\n${internalLinkCandidates}\n   Format: <a href="/path">descriptive text</a>`
-    : 'no candidates available — skip internal links'}
+B) INTERNAL LINKS: ${internalLinkCandidates
+    ? `embed exactly 2 of these site links INLINE where naturally relevant:\n${internalLinkCandidates}\n   • Format: <a href="/path">descriptive anchor text</a> (no domain, no target attribute)`
+    : 'none available — skip'}
+
+FAILURE TO INCLUDE INLINE <a href> TAGS IN THE HTML WILL BREAK SEO. YOU MUST ADD THEM.
 `
 
   const user = `Write a complete, publication-ready ${isComprehensive ? 'reference article' : 'listicle'} about: "${topic}"
