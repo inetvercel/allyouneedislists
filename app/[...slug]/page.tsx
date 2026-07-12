@@ -474,6 +474,9 @@ export default async function SlugPage({
           </div>
         )}
 
+        {/* Sentinel: JS in SidebarPanel reads this to align TOC with content start */}
+        <div id="content-start" aria-hidden="true" />
+
         {/* Content */}
         <div
           className="post-content-body"

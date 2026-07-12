@@ -308,7 +308,7 @@ body {
     align-self: start;
     position: sticky;
     top: 88px;
-    padding-top: 2.5rem;
+    /* padding-top set dynamically by SidebarPanel JS to align with #content-start */
   }
   .sidebar-panel {
     max-height: calc(100vh - 110px);

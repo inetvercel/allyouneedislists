@@ -20,6 +20,28 @@ export default function SidebarPanel({ items, title, url, relatedPosts = [] }: P
   const encoded      = encodeURIComponent(url)
   const encodedTitle = encodeURIComponent(title)
 
+  /* ── Align TOC start with article body (below hero image) ── */
+  useEffect(() => {
+    function align() {
+      const anchor  = document.getElementById('content-start')
+      const wrapper = document.querySelector<HTMLElement>('.toc-sidebar-wrapper')
+      if (!anchor || !wrapper) return
+      // Get absolute page offsets using offsetTop chain
+      let anchorTop = 0
+      let el: HTMLElement | null = anchor
+      while (el) { anchorTop += el.offsetTop; el = el.offsetParent as HTMLElement | null }
+      let wrapperTop = 0
+      let wel: HTMLElement | null = wrapper
+      while (wel) { wrapperTop += wel.offsetTop; wel = wel.offsetParent as HTMLElement | null }
+      const offset = Math.max(0, anchorTop - wrapperTop)
+      wrapper.style.paddingTop = `${offset}px`
+    }
+    // Run after fonts/images settle
+    const t = setTimeout(align, 120)
+    window.addEventListener('resize', align)
+    return () => { clearTimeout(t); window.removeEventListener('resize', align) }
+  }, [])
+
   /* ── Scroll-tracking: active section ── */
   useEffect(() => {
     if (!items.length) return
