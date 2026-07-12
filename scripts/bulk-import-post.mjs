@@ -195,12 +195,14 @@ Return ONLY valid JSON — no markdown, no code fences:
 
   const HTML_STRUCTURE = `
 HTML CONTENT STRUCTURE (follow exactly):
-1. QUICK PICKS box (first element):
-<div class="quick-picks"><strong>⚡ Quick Picks</strong><ul>
-<li>🥇 <strong>Best Overall:</strong> [Item] — [reason]</li>
-<li>💰 <strong>Best Value:</strong> [Item] — [reason]</li>
-[one li per remaining item]
-</ul></div>
+1. QUICK PICKS CARDS (first element — one card per item, max 6):
+<div class="quick-picks">
+<p class="qp-title">⚡ Quick Picks</p>
+<div class="qp-grid">
+<div class="qp-card"><div class="qp-header"><img class="qp-logo" src="https://www.google.com/s2/favicons?domain=[DOMAIN e.g. notion.so]&sz=64" alt="[Name]" loading="lazy" onerror="this.style.display='none'"><div><span class="qp-badge">[EMOJI] [Label e.g. Best Overall]</span><strong class="qp-name">[Name]</strong></div></div><p class="qp-stars">[★★★★★ honest rating]</p><p class="qp-desc">[One punchy sentence]</p></div>
+[repeat qp-card — badges: 🏆 Best Overall · 💰 Best Value · ⚡ Best Speed · 🎯 Best for Beginners · 🔒 Best Security · 📱 Best Mobile · 🤝 Best for Teams · 🆓 Best Free]
+</div>
+</div>
 
 2. COMPARISON TABLE (immediately after Quick Picks — one row per list item):
 <div class="comparison-table-wrapper"><table class="comparison-table">
