@@ -104,7 +104,11 @@ const sanity = createClient({
 })
 
 // ─── Slug cleaner ─────────────────────────────────────────────────────────────
-const STOP_WORDS = new Set(['the','a','an','and','or','in','on','at','to','for','of','by','with','from','is','are','was','were','how','what','why','when','where','who','will','can','you','your','we','our','its','i','do','be'])
+const STOP_WORDS = new Set([
+  'the','a','an','and','or','in','on','at','to','for','of','by','with','from','into','about','over','under','between','through','during','before','after','above','below',
+  'is','are','was','were','how','what','why','when','where','who','will','can','you','your','we','our','its','i','do','be','has','have','had','get','make','need','use','just','let',
+  'worth','using','without','every','all','most','more','top','best','great','new','next','last','now','here','these','those','some','any','each',
+])
 
 function cleanSlug(raw) {
   return raw

@@ -69,7 +69,11 @@ const grokClient = GROK_KEY ? new OpenAI({ apiKey: GROK_KEY, baseURL: 'https://a
 const sanity = createClient({ projectId: PROJECT_ID, dataset: DATASET, token: TOKEN, apiVersion: '2024-01-01', useCdn: false })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const STOP_WORDS = new Set(['the','a','an','and','or','in','on','at','to','for','of','by','with','from','is','are','was'])
+const STOP_WORDS = new Set([
+  'the','a','an','and','or','in','on','at','to','for','of','by','with','from','into','about','over','under','between','through','during','before','after','above','below',
+  'is','are','was','were','how','what','why','when','where','who','will','can','you','your','we','our','its','i','do','be','has','have','had','get','make','need','use','just','let',
+  'worth','using','without','every','all','most','more','top','best','great','new','next','last','now','here','these','those','some','any','each',
+])
 function cleanSlug(raw) {
   return raw.toLowerCase().replace(/\b20\d{2}\b/g,'').replace(/[^a-z0-9\s-]/g,'')
     .split(/[\s-]+/).filter(w => w && !STOP_WORDS.has(w)).slice(0,6).join('-')
