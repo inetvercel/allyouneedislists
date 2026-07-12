@@ -235,11 +235,58 @@ async function generateImageAI(visualPrompt) {
   }
 }
 
+// ─── Grok image finder (real web photo via search) ───────────────────────────
+async function findImageWithGrokSearch(title, imagePrompt) {
+  console.log(`  🔍 Grok searching for a real high-res photo...`)
+  try {
+    const response = await grokClient.chat.completions.create({
+      model: grokModel,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an image search assistant. Use web_search to find freely usable high-resolution photos. Return only JSON.',
+        },
+        {
+          role: 'user',
+          content: `Search the web for the best freely usable high-resolution photograph for an article titled: "${title}"\nVisual description: ${imagePrompt}\n\nSearch these sites (in order):\n1. Unsplash.com — get the direct CDN URL: https://images.unsplash.com/photo-...\n2. Pexels.com — get the direct photo CDN URL\n3. Wikimedia Commons — for factual/historical topics\n\nRequirements: landscape orientation, 1920x1080 minimum, freely usable (CC0), no watermarks, directly downloadable URL.\n\nReturn ONLY this JSON (nothing else):\n{"imageUrl": "https://...", "credit": "Photo by Name on Site"}`,
+        },
+      ],
+      tools: [{ type: 'web_search' }],
+    })
+
+    const content = response.choices[0].message.content || ''
+    const match = content.match(/\{"imageUrl"[^}]+\}/)
+    if (!match) throw new Error('No imageUrl in Grok response')
+
+    const { imageUrl, credit } = JSON.parse(match[0])
+    if (!imageUrl || !imageUrl.startsWith('http')) throw new Error('Invalid URL')
+
+    // Verify the URL is actually a downloadable image
+    const probe = await fetch(imageUrl, { method: 'HEAD' }).catch(() => null)
+    if (!probe?.ok) throw new Error(`Not reachable (${probe?.status ?? 'network error'})`)
+    const ct = probe.headers.get('content-type') || ''
+    if (!ct.startsWith('image/')) throw new Error(`Not an image (${ct})`)
+
+    console.log(`  ✅ Real photo found: ${credit || imageUrl.slice(0, 80)}`)
+    return { url: imageUrl, credit }
+  } catch (err) {
+    console.warn(`  ⚠️  Grok image search failed: ${err.message} — falling back to next source`)
+    return null
+  }
+}
+
 // ─── Image router ──────────────────────────────────────────────────────────────
 async function getImage(title, imagePrompt, tags) {
   const source = skipImages ? 'none' : imageSource
 
   if (source === 'none') return null
+
+  // When using Grok mode in auto, first try to find a real web photo
+  if (useGrok && source === 'auto') {
+    const found = await findImageWithGrokSearch(title, imagePrompt)
+    if (found) return found
+    // fall through to next available source
+  }
 
   if (source === 'ideogram') {
     console.log(`  🎨 Ideogram v2 generating branded thumbnail...`)
@@ -565,7 +612,8 @@ async function processOneTopic(topic, category) {
     const imageResult = await getImage(content.title, content.imagePrompt, content.tags || [])
     if (imageResult) {
       featuredImage = await uploadImageToSanity(imageResult, `${content.slug}-hero.png`)
-      if (imageResult.unsplashCredit) console.log(`  ✅ Hero image ready (credit: ${imageResult.unsplashCredit})`)
+      const credit = imageResult.credit || imageResult.unsplashCredit
+      if (credit) console.log(`  ✅ Hero image ready (credit: ${credit})`)
       else console.log(`  ✅ Hero image ready`)
     }
   } catch (err) {

@@ -205,8 +205,53 @@ ${HTML_STRUCTURE}`,
   return parsed
 }
 
+// ─── Grok image finder (real web photo via search) ───────────────────────────
+async function findImageWithGrokSearch(postTitle, imagePrompt) {
+  console.log(`  🔍 Grok searching for a real high-res photo...`)
+  try {
+    const response = await grokClient.chat.completions.create({
+      model: grokModel,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an image search assistant. Use web_search to find freely usable high-resolution photos. Return only JSON.',
+        },
+        {
+          role: 'user',
+          content: `Search the web for the best freely usable high-resolution photograph for an article titled: "${postTitle}"\nVisual description: ${imagePrompt}\n\nSearch these sites (in order):\n1. Unsplash.com — get the direct CDN URL: https://images.unsplash.com/photo-...\n2. Pexels.com — get the direct photo CDN URL\n3. Wikimedia Commons — for factual/historical topics\n\nRequirements: landscape orientation, 1920x1080 minimum, freely usable (CC0), no watermarks, directly downloadable URL.\n\nReturn ONLY this JSON (nothing else):\n{"imageUrl": "https://...", "credit": "Photo by Name on Site"}`,
+        },
+      ],
+      tools: [{ type: 'web_search' }],
+    })
+
+    const content = response.choices[0].message.content || ''
+    const match = content.match(/\{"imageUrl"[^}]+\}/)
+    if (!match) throw new Error('No imageUrl in Grok response')
+
+    const { imageUrl, credit } = JSON.parse(match[0])
+    if (!imageUrl || !imageUrl.startsWith('http')) throw new Error('Invalid URL')
+
+    const probe = await fetch(imageUrl, { method: 'HEAD' }).catch(() => null)
+    if (!probe?.ok) throw new Error(`Not reachable (${probe?.status ?? 'network error'})`)
+    const ct = probe.headers.get('content-type') || ''
+    if (!ct.startsWith('image/')) throw new Error(`Not an image (${ct})`)
+
+    console.log(`  ✅ Real photo found: ${credit || imageUrl.slice(0, 80)}`)
+    return { url: imageUrl, credit }
+  } catch (err) {
+    console.warn(`  ⚠️  Grok image search failed: ${err.message} — falling back`)
+    return null
+  }
+}
+
 // ─── Image generation ─────────────────────────────────────────────────────────
 async function getHeroImage(imagePrompt, postTitle) {
+  // When using Grok, first try to find a real web photo
+  if (useGrok) {
+    const found = await findImageWithGrokSearch(postTitle, imagePrompt)
+    if (found) return found
+  }
+
   if (IDEOGRAM_KEY) {
     console.log(`  🎨 Ideogram generating thumbnail...`)
     const prompt = `"${postTitle}" — bold clean typography over a ${imagePrompt}. Professional editorial thumbnail, dark background with vibrant accent colours, magazine quality, 16:9 web banner.`
