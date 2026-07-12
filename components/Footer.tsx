@@ -150,6 +150,9 @@ export default function Footer() {
             <Link href="/contact" className="hover:text-gray-400 transition-colors">Contact</Link>
           </div>
         </div>
+        <div className="relative px-6 md:px-10 pb-6 text-[10.5px] text-gray-600 leading-relaxed">
+          <p>As an Amazon Associate, All You Need Is Lists earns from qualifying purchases. Some links on this site are affiliate links.</p>
+        </div>
 
       </div>
     </footer>

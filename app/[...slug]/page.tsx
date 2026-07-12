@@ -410,7 +410,7 @@ export default async function SlugPage({
                 <div>
                   {post.categories && post.categories.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {post.categories.map((cat) => {
+                      {post.categories.slice(0, 3).map((cat) => {
                         const color = catColor(cat.slug)
                         return (
                           <Link key={cat._id} href={`/category/${cat.slug}`}
@@ -470,6 +470,12 @@ export default async function SlugPage({
 
         {/* Sentinel: JS in SidebarPanel reads this to align TOC with content start */}
         <div id="content-start" aria-hidden="true" />
+
+        {/* Affiliate disclosure — required near affiliate links, not just buried in Terms */}
+        <p className="text-[11px] text-gray-400 italic mb-5 pb-4 border-b border-gray-100">
+          This post may contain affiliate links. As an Amazon Associate, we earn from qualifying purchases at no extra cost to you. See our{' '}
+          <Link href="/terms" className="underline hover:text-gray-600">Terms</Link>.
+        </p>
 
         {/* Content */}
         <div

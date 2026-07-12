@@ -70,6 +70,12 @@ export default function PrivacyPage() {
             at no additional cost to you. This never influences the objectivity of our rankings and recommendations.
           </p>
           <p>
+            <strong>All You Need Is Lists is a participant in the Amazon Services LLC Associates Program</strong>, an
+            affiliate advertising program designed to provide a means for sites to earn advertising fees by
+            advertising and linking to Amazon.com (and its international equivalents, including Amazon.co.uk).
+            As an Amazon Associate, we earn from qualifying purchases.
+          </p>
+          <p>
             We may also work with third-party advertising and analytics providers (such as Google) who may use cookies
             to serve relevant ads based on your visits to this and other websites.
           </p>

@@ -29,6 +29,22 @@ const nextConfig: NextConfig = {
         destination: '/lifestyle/chicago-sports-fan-spots',
         permanent: true,
       },
+      // Busiest airports posts — 3 old thin WP duplicates consolidated into one AI-refreshed article
+      {
+        source: '/world-business/25-biggest-busiest-airports-world-yearly-passengers',
+        destination: '/business/busiest-airports-passenger-rankings',
+        permanent: true,
+      },
+      {
+        source: '/world-business/10-biggest-airports-world-yearly-passengers',
+        destination: '/business/busiest-airports-passenger-rankings',
+        permanent: true,
+      },
+      {
+        source: '/world-business/busiest-airports-in-the-world',
+        destination: '/business/busiest-airports-passenger-rankings',
+        permanent: true,
+      },
     ]
   },
   images: {

@@ -68,6 +68,12 @@ export default function TermsPage() {
             make a purchase, at no extra cost to you. Our editorial opinions and rankings remain independent of any
             affiliate relationship.
           </p>
+          <p>
+            <strong>All You Need Is Lists is a participant in the Amazon Services LLC Associates Program</strong>, an
+            affiliate advertising program designed to provide a means for sites to earn advertising fees by
+            advertising and linking to Amazon.com (and its international equivalents, including Amazon.co.uk).
+            As an Amazon Associate, we earn from qualifying purchases.
+          </p>
         </Section>
 
         <Section title="Accuracy of Information">

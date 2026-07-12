@@ -400,15 +400,45 @@ async function getImage(title, imagePrompt, tags) {
 }
 
 // ─── Fetch candidate posts for contextual internal linking ──────────────────
-async function fetchLinksForPrompt(category) {
+// Content-cluster discovery: combines cross-category keyword matches (so a post
+// about "airports" can also link to "airlines" or "runways" pieces even if they
+// live in a different category) with same-category-cluster posts.
+const LINK_STOP_WORDS = new Set([
+  'the','a','an','and','or','of','in','on','at','to','for','by','with','from','is','are',
+  'was','were','best','top','worst','most','all','every','things','that','this','these',
+  'those','your','you','how','what','why','when','where','who','2025','2026','2027','yearly',
+])
+function extractKeywords(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 3 && !LINK_STOP_WORDS.has(w) && !/^\d+$/.test(w))
+    .map(w => (w.length > 4 && w.endsWith('s') ? w.slice(0, -1) : w))
+    .filter(Boolean)
+    .slice(0, 6)
+}
+
+async function fetchLinksForPrompt(category, topicTitle = '') {
   const slugs = CATEGORY_MAP[category] || [category]
+  const patterns = extractKeywords(topicTitle).map(k => `*${k}*`)
   // Only link to AI-generated posts — their URLs are stable.
   // Old WP posts will get new URLs when refreshed, making those links redirect hops.
-  const posts = await sanity.fetch(
-    `*[_type == "post" && !(_id in path("drafts.**")) && aiGenerated == true && !defined(redirectTo) && references(*[_type=="category" && slug.current in $slugs]._id)] | order(date desc) [0...15] { title, fullPath }`,
-    { slugs }
-  ).catch(() => [])
-  return posts
+  const [byCategory, byKeyword] = await Promise.all([
+    sanity.fetch(
+      `*[_type == "post" && !(_id in path("drafts.**")) && aiGenerated == true && !defined(redirectTo) && references(*[_type=="category" && slug.current in $slugs]._id)] | order(date desc) [0...15] { title, fullPath }`,
+      { slugs }
+    ).catch(() => []),
+    patterns.length
+      ? sanity.fetch(
+          `*[_type == "post" && !(_id in path("drafts.**")) && aiGenerated == true && !defined(redirectTo) && title match $patterns] | order(date desc) [0...15] { title, fullPath }`,
+          { patterns }
+        ).catch(() => [])
+      : Promise.resolve([]),
+  ])
+  const merged = [...byKeyword, ...byCategory]
+  const seen = new Set()
+  return merged.filter(p => (seen.has(p.fullPath) ? false : (seen.add(p.fullPath), true))).slice(0, 20)
 }
 
 // ─── Content generation ────────────────────────────────────────────────────────
@@ -416,7 +446,7 @@ async function generateContent(topic, category) {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   console.log(`  📝 ${useGrok ? `Grok ${grokModel} + web search` : 'GPT-5.5'} generating content...`)
 
-  const relatedLinks = await fetchLinksForPrompt(category)
+  const relatedLinks = await fetchLinksForPrompt(category, topic)
 
 
   const isComprehensive = /^list of all|all \d+ .{2,30} (movies|films|albums|games|songs|seasons|episodes)|in (chronological|release) order|complete list of/i.test(topic)
@@ -488,6 +518,7 @@ IMAGE PLACEHOLDERS: After entry 4 and after entry 8, insert exactly this comment
 <p>[Paragraph 1 — what it is, why it stands out, specific differentiator]</p>
 <p>[Paragraph 2 — features, real specs/prices/data, named examples]</p>
 <p>[Paragraph 3 — practical tips, caveats, comparison context, or who should avoid it]</p>
+CRITICAL: Never prefix a paragraph with a literal meta-label like "Tip:", "Context:", "Comparison:", "Caveat:", "Named example:", "Link:", or "External link example:". Write complete, natural sentences — the bracket instructions above describe the CONTENT of the sentence, not literal text to output.
 
 VISUAL VARIETY RULE — every 3–4 items, insert ONE of these elements to break up the text:
 
@@ -505,6 +536,14 @@ Option B — Quote card (expert opinion or user testimonial):
 
 Option C — Callout box (pro tip, warning, or key insight):
 <div class="callout"><strong>💡 Pro tip:</strong> [Actionable insight readers can use immediately]</div>
+
+Option D — Did You Know? fact card (surprising, specific, verifiable trivia related to the item — use at least once per article, ideally 2-3 times spread across different items. This is a key differentiator for engagement and unique content Google rewards):
+<div class="fact-card"><div><span class="fact-label">Did you know?</span><p>[One punchy, specific, surprising fact with a real number/date/name — e.g. "Atlanta's airport handles more than 2,700 flights every day, making it one of the busiest aviation hubs in history."]</p></div></div>
+CRITICAL FACT-CARD RULES:
+- Must be a genuinely surprising or little-known fact, not a restatement of the item's main description
+- Must include a specific number, date, ranking, or named detail — never vague ("very popular", "many people")
+- Must be verifiable / plausible, never invented statistics
+- Vary the emoji in fact-label per topic if natural (e.g. ✈️ for travel, 💰 for finance) but keep the "fact-card" class and structure exactly
 
 IMAGE PLACEHOLDERS: After item 3 and after item 6 (or the midpoint), insert:
 <!-- IMAGE: [25-word photorealistic prompt for a scene related to items in this section] -->
@@ -532,8 +571,8 @@ ${useGrok
     ? '   • ONLY use URLs you actually visited during your web search — never invent a URL'
     : '   • Good sources: Wikipedia, official brand pages, .gov/.edu, BBC/Reuters/Forbes'}
 
-B) INTERNAL LINKS: ${internalLinkCandidates
-    ? `embed exactly 2 of these site links INLINE where naturally relevant:\n${internalLinkCandidates}\n   • Format: <a href="/path">descriptive anchor text</a> (no domain, no target attribute)`
+B) INTERNAL LINKS — THIS IS A CONTENT CLUSTER SITE. Google rewards heavy topical interlinking between related articles: ${internalLinkCandidates
+    ? `embed 4–8 of these site links INLINE, spread naturally throughout different sections (not bunched together, not just at the end):\n${internalLinkCandidates}\n   • Only link where genuinely relevant to that sentence — never force an irrelevant link\n   • Format: <a href="/path">descriptive anchor text</a> (no domain, no target attribute)`
     : 'none available — skip'}
 
 FAILURE TO INCLUDE INLINE <a href> TAGS IN THE HTML WILL BREAK SEO. YOU MUST ADD THEM.
@@ -677,12 +716,15 @@ async function uploadImageToSanity(imageResult, filename) {
 
 async function resolveCategoryRefs(suggestedCategory, override) {
   const key = override || suggestedCategory
-  const slugs = CATEGORY_MAP[key] || [key]
+  // NOTE: only resolve the single chosen category — CATEGORY_MAP is for finding
+  // related posts to link to (fetchLinksForPrompt), NOT for assigning every sibling
+  // category to the post itself. Assigning siblings caused posts to get 5-6 wrong
+  // categories (e.g. "business" pulling in marketing, seo, finance, startups too).
   const cats = await sanity.fetch(
-    `*[_type == "category" && slug.current in $slugs] { _id, "slug": slug.current }`,
-    { slugs }
+    `*[_type == "category" && slug.current == $slug] { _id, "slug": slug.current }`,
+    { slug: key }
   )
-  if (cats.length === 0) console.warn(`  ⚠️  No categories found for "${key}" — post will have no category`)
+  if (cats.length === 0) console.warn(`  ⚠️  No category found for "${key}" — post will have no category`)
   return cats.map(c => ({ _type: 'reference', _ref: c._id, _key: c._id }))
 }
 

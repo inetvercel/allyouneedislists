@@ -100,7 +100,9 @@ const DUAL_MAP: Record<string, AffiliateEntry> = {
 
   // ── Productivity & Office ──────────────────────────────────────────────────
   'Standing Desk':          { us: us('standing desk'),         uk: uk('standing desk') },
-  'Monitor':                { us: us('monitor 4k'),            uk: uk('monitor 4k') },
+  '4K Monitor':             { us: us('monitor 4k'),            uk: uk('monitor 4k') },
+  'Gaming Monitor':         { us: us('gaming monitor'),        uk: uk('gaming monitor') },
+  'Computer Monitor':       { us: us('computer monitor'),      uk: uk('computer monitor') },
   'Mechanical Keyboard':    { us: us('mechanical keyboard'),   uk: uk('mechanical keyboard') },
   'Webcam':                 { us: us('webcam 1080p'),          uk: uk('webcam 1080p') },
   'Ring Light':             { us: us('ring light'),            uk: uk('ring light') },
