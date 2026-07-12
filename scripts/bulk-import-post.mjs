@@ -159,10 +159,10 @@ Return ONLY valid JSON — no markdown, no code fences:
   "excerpt": "Compelling 150-160 character summary",
   "seoTitle": "SEO title under 60 chars",
   "seoDescription": "Meta description 145-155 chars with call to action",
-  "content": "<full article HTML — 2,500-4,000 words, following structure below>",
   "imagePrompt": "25-word photorealistic scene for hero image",
   "suggestedCategory": "${category || 'auto-detect — one of: ai, business, technology, entertainment, travel, lifestyle, statistics, directories'}",
-  "tags": ["6 to 8 specific lowercase hyphenated tags"]
+  "tags": ["6 to 8 specific lowercase hyphenated tags"],
+  "content": "<full article HTML — 2,500-4,000 words, following structure below>"
 }`
     : `${grokInstruction}Write a complete, publication-ready listicle about: "${title}"
 Filing category (taxonomy only — do NOT restrict content to this area): ${category || 'auto-detect'}${linksBlock}
@@ -176,10 +176,10 @@ Return ONLY valid JSON — no markdown, no code fences:
   "excerpt": "Compelling 150-160 character summary",
   "seoTitle": "SEO title under 60 chars",
   "seoDescription": "Meta description 145-155 chars with call to action",
-  "content": "<full article HTML — 2,500-4,000 words>",
   "imagePrompt": "25-word photorealistic scene for hero image",
   "suggestedCategory": "${category || 'auto-detect — one of: ai, business, technology, entertainment, travel, lifestyle, statistics, directories'}",
-  "tags": ["6 to 8 specific lowercase hyphenated tags"]
+  "tags": ["6 to 8 specific lowercase hyphenated tags"],
+  "content": "<full article HTML — 2,500-4,000 words>"
 }`
 
   const HTML_STRUCTURE = `

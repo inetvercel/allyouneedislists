@@ -518,10 +518,10 @@ Return ONLY valid JSON — no markdown, no code fences:
   "excerpt": "Compelling 150-160 character summary that creates urgency to click",
   "seoTitle": "SEO title under 60 characters with primary keyword near the start",
   "seoDescription": "145-155 character meta description with natural keyword use and a call to action",
-  "content": "[Full HTML following the structure above — 3,000-3,500 words]",
   "imagePrompt": "Detailed photorealistic image prompt: specific subject, environment, lighting, mood, camera angle. No text or logos.",
   "suggestedCategory": "One of: ai, business, technology, entertainment, travel, lifestyle, statistics, directories",
-  "tags": ["6 to 8 specific lowercase hyphenated tags"]
+  "tags": ["6 to 8 specific lowercase hyphenated tags"],
+  "content": "[Full HTML following the structure above — 3,000-3,500 words]"
 }`
 
   const messages = [
@@ -727,7 +727,7 @@ async function processOneTopic(topic, category) {
   const extIcon = externalCount >= 2 ? '✅' : '⚠️ '
   const intIcon = internalBodyCount >= 1 ? '✅' : '⚠️ '
   console.log(`  ${extIcon} External links in body: ${externalCount}${externalCount < 2 ? ' (Grok did not add enough — check prompt)' : ''}`)
-  console.log(`  ${intIcon} Inline internal links:  ${internalBodyCount}${internalBodyCount < 1 && relatedLinks.length > 0 ? ' (Grok skipped internal links — check prompt)' : ''}`)
+  console.log(`  ${intIcon} Inline internal links:  ${internalBodyCount}${internalBodyCount < 1 ? ' (Grok may have skipped — check article)' : ''}`)
   if (relatedPosts.length > 0) console.log(`  🔗 ${relatedPosts.length} related-post link(s) appended`)
 
   // 5. Publish to Sanity
