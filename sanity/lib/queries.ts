@@ -97,8 +97,8 @@ export const getTopCategoriesQuery = groq`
 export const getAboutStatsQuery = groq`
   {
     "totalPosts": count(*[_type == "post" && !defined(redirectTo)]),
-    "totalCategories": count(*[_type == "category" && !defined(parent) && count(*[_type == "post" && !defined(redirectTo) && references(^._id)]) > 0]),
-    "categories": *[_type == "category" && !defined(parent) && count(*[_type == "post" && !defined(redirectTo) && references(^._id)]) > 0] | order(name asc) {
+    "totalCategories": count(*[_type == "category" && !defined(parent) && count(*[_type == "post" && !defined(redirectTo) && references(^._id)]) > 1]),
+    "categories": *[_type == "category" && !defined(parent) && count(*[_type == "post" && !defined(redirectTo) && references(^._id)]) > 1] | order(count(*[_type == "post" && !defined(redirectTo) && references(^._id)]) desc) [0...12] {
       name,
       "slug": slug.current,
       "count": count(*[_type == "post" && !defined(redirectTo) && references(^._id)])

@@ -2,20 +2,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { urlFor } from '@/sanity/lib/image'
 import type { PostCard as PostCardType } from '@/types'
+import { CAT_COLORS, catColor } from '@/lib/categoryColors'
 
-export const CAT_COLORS: Record<string, string> = {
-  technology: '#38bdf8',
-  business: '#fbbf24',
-  entertainment: '#f472b6',
-  ai: '#4ade80',
-  lifestyle: '#a78bfa',
-  travel: '#2dd4bf',
-  statistics: '#fb923c',
-  directories: '#60a5fa',
-}
-export function catColor(slug?: string) {
-  return CAT_COLORS[slug || ''] || '#E63946'
-}
+export { CAT_COLORS, catColor }
 
 export function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })

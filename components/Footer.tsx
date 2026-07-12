@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { LogoMark } from './Logo'
+import { catColor } from '@/lib/categoryColors'
 
 const BROWSE = [
   { label: 'AI & Tools',     href: '/category/ai' },
@@ -24,17 +25,9 @@ const COMPANY = [
   { label: 'Latest',      href: '/' },
 ]
 
-const CAT_COLORS: Record<string, string> = {
-  ai: '#4ade80',
-  technology: '#38bdf8',
-  business: '#fbbf24',
-  entertainment: '#f472b6',
-  lifestyle: '#a78bfa',
-  travel: '#2dd4bf',
-}
 function dotColor(href: string) {
   const slug = href.split('/').pop() || ''
-  return CAT_COLORS[slug] || '#E63946'
+  return catColor(slug)
 }
 
 function SocialX() {

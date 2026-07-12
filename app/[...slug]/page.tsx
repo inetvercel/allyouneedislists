@@ -20,23 +20,10 @@ import TableOfContents from '@/components/TableOfContents'
 import SidebarPanel from '@/components/SidebarPanel'
 import HelpfulWidget from '@/components/HelpfulWidget'
 import { LogoMark } from '@/components/Logo'
+import { catColor } from '@/lib/categoryColors'
 import type { PostFull, Category } from '@/types'
 
 const PER_PAGE = 18
-
-const CAT_COLORS: Record<string, string> = {
-  technology: '#38bdf8',
-  business: '#fbbf24',
-  entertainment: '#f472b6',
-  ai: '#4ade80',
-  lifestyle: '#a78bfa',
-  travel: '#2dd4bf',
-  statistics: '#fb923c',
-  directories: '#60a5fa',
-}
-function catColor(slug?: string) {
-  return CAT_COLORS[slug || ''] || '#E63946'
-}
 
 function extractFaqs(html: string): { q: string; a: string }[] {
   const faqs: { q: string; a: string }[] = []
@@ -415,14 +402,6 @@ export default async function SlugPage({
                   </span>
                 ))}
               </nav>
-
-              {/* Refreshed banner */}
-              {post.originalPath && (
-                <div className="flex items-center gap-2 mb-4 text-xs text-amber-400 bg-amber-900/20 border border-amber-800/40 rounded-2xl px-4 py-2.5">
-                  <span>🔄</span>
-                  <span>Updated from <span className="font-semibold">&ldquo;{post.originalTitle || post.originalPath}&rdquo;</span></span>
-                </div>
-              )}
 
               {/* Split: title (left) + image (right) */}
               <div className={`grid gap-7 lg:gap-10 items-center ${imageUrl ? 'grid-cols-1 lg:grid-cols-[1fr_440px]' : 'grid-cols-1 max-w-3xl'}`}>

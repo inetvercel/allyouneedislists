@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { urlFor } from '@/sanity/lib/image'
 import type { PostCard as PostCardType } from '@/types'
+import { catColor } from '@/lib/categoryColors'
 
 interface PostCardProps {
   post: PostCardType
@@ -18,20 +19,6 @@ function formatDate(dateStr: string) {
 
 function stripHtml(html: string) {
   return html.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').trim()
-}
-
-const CAT_COLORS: Record<string, string> = {
-  technology: '#38bdf8',
-  business: '#fbbf24',
-  entertainment: '#f472b6',
-  ai: '#4ade80',
-  lifestyle: '#a78bfa',
-  travel: '#2dd4bf',
-  statistics: '#fb923c',
-  directories: '#60a5fa',
-}
-function catColor(slug?: string) {
-  return CAT_COLORS[slug || ''] || '#E63946'
 }
 
 export default function PostCard({ post, featured = false }: PostCardProps) {
