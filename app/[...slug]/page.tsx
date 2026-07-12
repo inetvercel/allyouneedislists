@@ -25,6 +25,22 @@ import type { PostFull, Category } from '@/types'
 
 const PER_PAGE = 18
 
+// Decodes HTML entities left over after stripping tags from AI-generated content
+// (e.g. "&ldquo;", "&rsquo;", "&amp;") so plain-text UI (ToC, FAQs, structured data)
+// shows real characters instead of literal entity codes.
+const HTML_ENTITY_MAP: Record<string, string> = {
+  ldquo: '\u201C', rdquo: '\u201D', lsquo: '\u2018', rsquo: '\u2019',
+  amp: '&', quot: '"', apos: "'", nbsp: ' ', mdash: '\u2014', ndash: '\u2013',
+  hellip: '\u2026', lt: '<', gt: '>',
+}
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&(ldquo|rdquo|lsquo|rsquo|amp|quot|apos|nbsp|mdash|ndash|hellip|lt|gt);/gi,
+      (_, name) => HTML_ENTITY_MAP[name.toLowerCase()] ?? _)
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)))
+}
+
 function extractFaqs(html: string): { q: string; a: string }[] {
   const faqs: { q: string; a: string }[] = []
   const itemRe = /<div[^>]*class="faq-item"[^>]*>([\s\S]*?)<\/div>/gi
@@ -34,8 +50,8 @@ function extractFaqs(html: string): { q: string; a: string }[] {
     const qMatch = inner.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)
     const aMatch = inner.match(/<p[^>]*>([\s\S]*?)<\/p>/i)
     if (qMatch && aMatch) {
-      const q = qMatch[1].replace(/<[^>]+>/g, '').trim()
-      const a = aMatch[1].replace(/<[^>]+>/g, '').trim()
+      const q = decodeHtmlEntities(qMatch[1].replace(/<[^>]+>/g, '').trim())
+      const a = decodeHtmlEntities(aMatch[1].replace(/<[^>]+>/g, '').trim())
       if (q && a) faqs.push({ q, a })
     }
   }
@@ -162,7 +178,7 @@ function extractToc(html: string): { id: string; text: string }[] {
   const re = /<h2[^>]*id="(section-\d+)"[^>]*>([\s\S]*?)<\/h2>/gi
   let m
   while ((m = re.exec(html)) !== null) {
-    const raw = m[2].replace(/<[^>]*>/g, '').trim().replace(/^\d+\s*/, '')
+    const raw = decodeHtmlEntities(m[2].replace(/<[^>]*>/g, '').trim().replace(/^\d+\s*/, ''))
     if (raw && !/frequently asked/i.test(raw)) items.push({ id: m[1], text: raw })
   }
   return items
@@ -173,7 +189,7 @@ function extractListItems(html: string, pagePath: string) {
   const re = /<h2[^>]*id="(section-\d+)"[^>]*>([\s\S]*?)<\/h2>/gi
   let m
   while ((m = re.exec(html)) !== null) {
-    const raw = m[2].replace(/<[^>]*>/g, '').trim().replace(/^\d+\s*/, '')
+    const raw = decodeHtmlEntities(m[2].replace(/<[^>]*>/g, '').trim().replace(/^\d+\s*/, ''))
     if (raw && !/frequently asked/i.test(raw)) {
       items.push({ position: items.length + 1, name: raw, url: `${pagePath}#${m[1]}` })
     }
