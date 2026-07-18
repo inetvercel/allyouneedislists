@@ -16,16 +16,22 @@ const W = 'max-w-[1380px]'
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ page?: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+  const { page } = await searchParams
   const category = await client.fetch<Category | null>(getCategoryBySlugQuery, { slug }).catch(() => null)
   if (!category) return { title: 'Not Found' }
+
+  const canonicalPath = `/category/${slug}${page && page !== '1' ? `?page=${page}` : ''}`
 
   return {
     title: `${category.name} Lists`,
     description: category.description || `Browse the best ${category.name} lists on All You Need Is Lists.`,
+    alternates: { canonical: canonicalPath },
   }
 }
 

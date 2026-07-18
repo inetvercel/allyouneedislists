@@ -8,6 +8,7 @@ import type { PostCard as PostCardType } from '@/types'
 export const metadata: Metadata = {
   title: 'Search',
   description: 'Search 1,400+ curated lists on All You Need Is Lists.',
+  robots: { index: false, follow: true },
 }
 
 const W = 'max-w-[1380px]'

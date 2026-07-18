@@ -226,6 +226,7 @@ export async function generateMetadata({
     return {
       title,
       description,
+      alternates: { canonical: fullPath },
       openGraph: {
         title,
         description,
@@ -248,6 +249,7 @@ export async function generateMetadata({
     return {
       title: `${category.name} Lists`,
       description: category.description || `Browse the best ${category.name} lists.`,
+      alternates: { canonical: fullPath },
     }
   }
 
@@ -343,7 +345,9 @@ export default async function SlugPage({
             url: 'https://allyouneedislists.com',
             logo: {
               '@type': 'ImageObject',
-              url: 'https://allyouneedislists.com/logo.png',
+              url: 'https://allyouneedislists.com/apple-icon',
+              width: 180,
+              height: 180,
             },
           },
           mainEntityOfPage: {

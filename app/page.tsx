@@ -16,9 +16,17 @@ import type { PostCard as PostCardType } from '@/types'
 const PER_PAGE = 18
 const W = 'max-w-[1380px]'
 
-export const metadata: Metadata = {
-  title: 'All You Need Is Lists — The Best Curated Lists on the Internet',
-  description: 'Discover top 10s, best-of lists and expert picks across AI, tech, business, entertainment, travel and more.',
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}): Promise<Metadata> {
+  const { page } = await searchParams
+  return {
+    title: 'All You Need Is Lists — The Best Curated Lists on the Internet',
+    description: 'Discover top 10s, best-of lists and expert picks across AI, tech, business, entertainment, travel and more.',
+    alternates: { canonical: page && page !== '1' ? `/?page=${page}` : '/' },
+  }
 }
 
 // ── Section header ─────────────────────────────────────────────────────────────

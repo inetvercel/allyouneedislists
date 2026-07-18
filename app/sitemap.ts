@@ -2,39 +2,27 @@ import type { MetadataRoute } from 'next'
 import { client } from '@/sanity/lib/client'
 import {
   getSitemapPostsQuery,
-  getSitemapPostsCountQuery,
   getAllCategorySlugPathsQuery,
+  getAllTagSlugPathsQuery,
 } from '@/sanity/lib/queries'
 
 const SITE_URL = 'https://allyouneedislists.com'
-const POSTS_PER_SITEMAP = 500
+// Google's sitemap limit is 50,000 URLs per file — well above this site's post count,
+// so a single sitemap.xml is used (generateSitemaps() is intentionally NOT used here:
+// it causes Next.js to 404 the root /sitemap.xml instead of serving an index —
+// see https://github.com/vercel/next.js/issues/77304).
+const MAX_URLS = 45000
 
-export async function generateSitemaps() {
-  const total = await client
-    .fetch<number>(getSitemapPostsCountQuery)
-    .catch(() => 0)
-
-  const count = Math.max(1, Math.ceil(total / POSTS_PER_SITEMAP))
-  return Array.from({ length: count }, (_, i) => ({ id: i }))
-}
-
-export default async function sitemap({
-  id,
-}: {
-  id: number
-}): Promise<MetadataRoute.Sitemap> {
-  const start = id * POSTS_PER_SITEMAP
-  const end = start + POSTS_PER_SITEMAP
-
-  const [posts, categories] = await Promise.all([
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [posts, categories, tags] = await Promise.all([
     client
-      .fetch<{ fullPath: string; date: string; updatedAt?: string }[]>(getSitemapPostsQuery, { start, end })
+      .fetch<{ fullPath: string; date: string; updatedAt?: string }[]>(getSitemapPostsQuery, {
+        start: 0,
+        end: MAX_URLS,
+      })
       .catch(() => []),
-    id === 0
-      ? client
-          .fetch<{ slug: string }[]>(getAllCategorySlugPathsQuery)
-          .catch(() => [])
-      : Promise.resolve([]),
+    client.fetch<{ slug: string }[]>(getAllCategorySlugPathsQuery).catch(() => []),
+    client.fetch<{ slug: string }[]>(getAllTagSlugPathsQuery).catch(() => []),
   ])
 
   const postEntries: MetadataRoute.Sitemap = posts.map((post) => ({
@@ -50,10 +38,17 @@ export default async function sitemap({
     priority: 0.5,
   }))
 
-  const staticEntries: MetadataRoute.Sitemap =
-    id === 0
-      ? [{ url: SITE_URL, changeFrequency: 'daily', priority: 1.0 }]
-      : []
+  const tagEntries: MetadataRoute.Sitemap = tags.map((tag) => ({
+    url: `${SITE_URL}/tag/${tag.slug}`,
+    changeFrequency: 'weekly',
+    priority: 0.4,
+  }))
 
-  return [...staticEntries, ...categoryEntries, ...postEntries]
+  const staticEntries: MetadataRoute.Sitemap = [
+    { url: SITE_URL, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${SITE_URL}/about`, changeFrequency: 'monthly', priority: 0.3 },
+    { url: `${SITE_URL}/contact`, changeFrequency: 'monthly', priority: 0.3 },
+  ]
+
+  return [...staticEntries, ...categoryEntries, ...tagEntries, ...postEntries]
 }

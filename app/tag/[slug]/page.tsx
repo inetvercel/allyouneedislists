@@ -26,19 +26,24 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ page?: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+  const { page } = await searchParams
   const tag = await client.fetch<Tag | null>(getTagBySlugQuery, { slug }).catch(() => null)
   if (!tag) return { title: 'Not Found' }
 
   const title = `${tag.name} Lists`
   const description = `Browse ${tag.count} curated lists tagged with "${tag.name}" on All You Need Is Lists.`
+  const canonicalPath = `/tag/${slug}${page && page !== '1' ? `?page=${page}` : ''}`
 
   return {
     title,
     description,
+    alternates: { canonical: canonicalPath },
     openGraph: {
       title,
       description,
